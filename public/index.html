@@ -176,17 +176,22 @@
     }
 
     function parseBetLine(line) {
-      let cleaned = line.replace(/\s+/g, '');
-      if (!cleaned) return { total: 0, valid: null };
-      
-      const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
-      
-      if (!match) return { total: 0, valid: false };
-      
-      const leftSide = match[1].toLowerCase();
-      const rightSide = match[2] ? match[2].toLowerCase() : null;
-      let betType = match[3] ? match[3].toUpperCase() : null;
-      const amount = match[4] ? parseInt(match[4], 10) : 10;
+  let cleaned = line.replace(/\s+/g, '');
+  if (!cleaned) return { total: 0, valid: null };
+  
+  // Don't flag error if line ends with a dash (still typing)
+  if (cleaned.endsWith('-')) return { total: 0, valid: null };
+  
+  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtFf])?(\d+)?$/);
+  
+  if (!match) return { total: 0, valid: false };
+  
+  const leftSide = match[1].toLowerCase();
+  const rightSide = match[2] ? match[2].toLowerCase() : null;
+  let betType = match[3] ? match[3].toUpperCase() : null;
+  const amount = match[4] ? parseInt(match[4], 10) : 10; // Default is 10 for all bet types
+  
+  // ... rest of the function stays the same
       
       const hasDash = rightSide !== null;
       
