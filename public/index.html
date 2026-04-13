@@ -408,6 +408,38 @@
     .bet-input-wrapper button {
       margin: 0;
     }
+
+    .bet-errors {
+      margin-bottom: 14px;
+    }
+
+    .bet-error-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid rgba(231, 76, 60, 0.4);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .bet-error-item .error-icon {
+      color: #e74c3c;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .bet-error-item .error-text {
+      color: #ffcccc;
+    }
+
+    .bet-error-item .error-line {
+      color: #ff6b6b;
+      font-family: 'Consolas', 'Monaco', monospace;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
@@ -442,6 +474,7 @@
 123-3789 F3     (Forecast)
 5-190ab T4      (Trio)"></textarea>
     <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
+    <div id="betErrorsContainer" class="bet-errors"></div>
     <div class="bet-input-wrapper">
       <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
     </div>
@@ -506,67 +539,120 @@
       let total = 0;
       
       for (const line of lines) {
-        const lineBet = parseBetLine(line);
-        total += lineBet;
+        const result = parseBetLine(line);
+        total += result.amount;
       }
       
       return total;
     }
     
-  function parseBetLine(line) {
-  // Remove all spaces
-  let cleaned = line.replace(/\s+/g, '');
-  if (!cleaned) return 0;
-  
-  // Valid horse characters: 0-9, a-l (lowercase)
-  // Bet types: W, Q, T (case insensitive), F (uppercase only)
-  // Pattern: (horses)(-horses)? (betType)? (amount)?
-  
-  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
-  
-  if (!match) return 0;
-  
-  const leftSide = match[1].toLowerCase();
-  const rightSide = match[2] ? match[2].toLowerCase() : null;
-  let betType = match[3] ? match[3].toUpperCase() : null;
-  const amount = match[4] ? parseInt(match[4], 10) : 10;
-  
-  const hasDash = rightSide !== null;
-  
-  // Default bet type
-  if (!betType) {
-    betType = hasDash ? 'Q' : 'W';
-  }
-  
-  let combinations = 0;
-  
-  switch (betType) {
-    case 'W':
-      combinations = countUniqueHorses(leftSide);
-      break;
-    case 'Q':
-      if (hasDash) {
-        combinations = calculateQuinellaDash(leftSide, rightSide);
-      } else {
-        const n = countUniqueHorses(leftSide);
-        combinations = (n * (n - 1)) / 2;
+    function calculateBetWithErrors(betText) {
+      const lines = betText.split('\n');
+      let total = 0;
+      let errors = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const result = parseBetLine(line);
+        total += result.amount;
+        
+        if (result.error) {
+          errors.push({
+            lineNumber: i + 1,
+            lineText: line,
+            error: result.error
+          });
+        }
       }
-      break;
-    case 'F':
-      if (hasDash) {
-        combinations = calculateForecast(leftSide, rightSide);
+      
+      return { total, errors };
+    }
+    
+    function parseBetLine(line) {
+      // Remove all spaces
+      let cleaned = line.replace(/\s+/g, '');
+      if (!cleaned) return { amount: 0, error: null };
+      
+      // Check if line ends with dash (incomplete input - user is typing)
+      if (cleaned.endsWith('-')) {
+        return { amount: 0, error: null };
       }
-      break;
-    case 'T':
-      if (hasDash) {
-        const rightCount = countUniqueHorses(rightSide);
-        combinations = (rightCount * (rightCount - 1)) / 2;
+      
+      // Valid horse characters: 0-9, a-l (lowercase)
+      // Bet types: W, Q, T (case insensitive), F (uppercase only)
+      // Pattern: (horses)(-horses)? (betType)? (amount)?
+      
+      const match = cleaned.match(/^([0-9a-lA-L]+)(?:-([0-9a-lA-L]+))?([WwQqTtF])?(\d+)?$/);
+      
+      if (!match) {
+        return { amount: 0, error: 'Invalid format' };
       }
-      break;
-  }
-  
-  return combinations * amount;
-}
+      
+      const leftSide = match[1].toLowerCase();
+      const rightSide = match[2] ? match[2].toLowerCase() : null;
+      let betType = match[3] ? match[3].toUpperCase() : null;
+      const amount = match[4] ? parseInt(match[4], 10) : 10;
+      
+      const hasDash = rightSide !== null;
+      
+      // Validate horse characters (only 0-9 and a-l)
+      const validHorsePattern = /^[0-9a-l]+$/;
+      if (!validHorsePattern.test(leftSide)) {
+        return { amount: 0, error: 'Invalid horse characters (use 0-9, a-l)' };
+      }
+      if (rightSide && !validHorsePattern.test(rightSide)) {
+        return { amount: 0, error: 'Invalid horse characters (use 0-9, a-l)' };
+      }
+      
+      // Default bet type
+      if (!betType) {
+        betType = hasDash ? 'Q' : 'W';
+      }
+      
+      let combinations = 0;
+      
+      switch (betType) {
+        case 'W':
+          if (hasDash) {
+            return { amount: 0, error: 'Win bet cannot have dash' };
+          }
+          combinations = countUniqueHorses(leftSide);
+          break;
+        case 'Q':
+          if (hasDash) {
+            combinations = calculateQuinellaDash(leftSide, rightSide);
+          } else {
+            const n = countUniqueHorses(leftSide);
+            if (n < 2) {
+              return { amount: 0, error: 'Quinella needs at least 2 horses' };
+            }
+            combinations = (n * (n - 1)) / 2;
+          }
+          break;
+        case 'F':
+          if (!hasDash) {
+            return { amount: 0, error: 'Forecast requires dash format' };
+          }
+          combinations = calculateForecast(leftSide, rightSide);
+          break;
+        case 'T':
+          if (!hasDash) {
+            return { amount: 0, error: 'Trio requires dash format' };
+          }
+          const rightCount = countUniqueHorses(rightSide);
+          if (rightCount < 2) {
+            return { amount: 0, error: 'Trio needs at least 2 horses on right side' };
+          }
+          combinations = (rightCount * (rightCount - 1)) / 2;
+          break;
+      }
+      
+      if (combinations <= 0) {
+        return { amount: 0, error: 'No valid combinations' };
+      }
+      
+      return { amount: combinations * amount, error: null };
+    }
     
     function countUniqueHorses(str) {
       const horses = new Set(str.split(''));
@@ -612,8 +698,26 @@
     
     function updateBetTotal() {
       const betText = document.getElementById('betInput').value;
-      const total = calculateBetTotal(betText);
-      document.getElementById('betTotalDisplay').textContent = 'Total: $' + total;
+      const result = calculateBetWithErrors(betText);
+      
+      document.getElementById('betTotalDisplay').textContent = 'Total: $' + result.total;
+      
+      // Display errors
+      const errorsContainer = document.getElementById('betErrorsContainer');
+      if (result.errors.length > 0) {
+        let errorsHtml = '';
+        for (const err of result.errors) {
+          errorsHtml += `
+            <div class="bet-error-item">
+              <span class="error-icon">✗</span>
+              <span class="error-text">Line ${err.lineNumber}: <span class="error-line">${escHtml(err.lineText)}</span> — ${err.error}</span>
+            </div>
+          `;
+        }
+        errorsContainer.innerHTML = errorsHtml;
+      } else {
+        errorsContainer.innerHTML = '';
+      }
     }
     
     // Attach event listener to bet input
@@ -805,6 +909,7 @@
       document.getElementById('raceTitle').textContent = data.raceName;
       document.getElementById('betInput').value = '';
       document.getElementById('betTotalDisplay').textContent = 'Total: $0';
+      document.getElementById('betErrorsContainer').innerHTML = '';
       document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
       show('betScreen');
     });
