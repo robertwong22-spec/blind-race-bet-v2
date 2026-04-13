@@ -513,67 +513,60 @@
       return total;
     }
     
-    function parseBetLine(line) {
-      // Remove all spaces and convert to lowercase for type matching
-      let cleaned = line.replace(/\s+/g, '');
-      if (!cleaned) return 0;
-      
-      // Extract bet type and amount using regex
-      // Pattern: (horses)(-horses)? (W|Q|F|T)? (number)?
-      const match = cleaned.match(/^([0-9a-z]+)(?:-([0-9a-z]+))?([wqft])?(\d+)?$/i);
-      
-      if (!match) return 0;
-      
-      const leftSide = match[1].toLowerCase();
-      const rightSide = match[2] ? match[2].toLowerCase() : null;
-      let betType = match[3] ? match[3].toUpperCase() : null;
-      const amount = match[4] ? parseInt(match[4], 10) : 10; // Default amount is 10
-      
-      const hasDash = rightSide !== null;
-      
-      // Determine default type if not specified
-      if (!betType) {
-        betType = hasDash ? 'Q' : 'W'; // Default: Q if dash, W otherwise
+  function parseBetLine(line) {
+  // Remove all spaces
+  let cleaned = line.replace(/\s+/g, '');
+  if (!cleaned) return 0;
+  
+  // Valid horse characters: 0-9, a-l (lowercase)
+  // Bet types: W, Q, T (case insensitive), F (uppercase only)
+  // Pattern: (horses)(-horses)? (betType)? (amount)?
+  
+  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
+  
+  if (!match) return 0;
+  
+  const leftSide = match[1].toLowerCase();
+  const rightSide = match[2] ? match[2].toLowerCase() : null;
+  let betType = match[3] ? match[3].toUpperCase() : null;
+  const amount = match[4] ? parseInt(match[4], 10) : 10;
+  
+  const hasDash = rightSide !== null;
+  
+  // Default bet type
+  if (!betType) {
+    betType = hasDash ? 'Q' : 'W';
+  }
+  
+  let combinations = 0;
+  
+  switch (betType) {
+    case 'W':
+      combinations = countUniqueHorses(leftSide);
+      break;
+    case 'Q':
+      if (hasDash) {
+        combinations = calculateQuinellaDash(leftSide, rightSide);
+      } else {
+        const n = countUniqueHorses(leftSide);
+        combinations = (n * (n - 1)) / 2;
       }
-      
-      // Calculate combinations based on bet type
-      let combinations = 0;
-      
-      switch (betType) {
-        case 'W':
-          // Win bet: just count unique horses on left side
-          combinations = countUniqueHorses(leftSide);
-          break;
-          
-        case 'Q':
-          if (hasDash) {
-            // Quinella with dash: left × right - n(n+1)/2 where n = duplicates
-            combinations = calculateQuinellaDash(leftSide, rightSide);
-          } else {
-            // Quinella boxed: nC2 = n(n-1)/2
-            const n = countUniqueHorses(leftSide);
-            combinations = (n * (n - 1)) / 2;
-          }
-          break;
-          
-        case 'F':
-          // Forecast: always has dash, left × right - n (where n = duplicates)
-          if (hasDash) {
-            combinations = calculateForecast(leftSide, rightSide);
-          }
-          break;
-          
-        case 'T':
-          // Trio: always has dash, format "x-yyy", combinations = nC2 of right side
-          if (hasDash) {
-            const rightCount = countUniqueHorses(rightSide);
-            combinations = (rightCount * (rightCount - 1)) / 2;
-          }
-          break;
+      break;
+    case 'F':
+      if (hasDash) {
+        combinations = calculateForecast(leftSide, rightSide);
       }
-      
-      return combinations * amount;
-    }
+      break;
+    case 'T':
+      if (hasDash) {
+        const rightCount = countUniqueHorses(rightSide);
+        combinations = (rightCount * (rightCount - 1)) / 2;
+      }
+      break;
+  }
+  
+  return combinations * amount;
+}
     
     function countUniqueHorses(str) {
       const horses = new Set(str.split(''));
