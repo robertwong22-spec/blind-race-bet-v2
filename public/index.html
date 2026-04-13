@@ -578,31 +578,22 @@ function parseBetLine(line) {
     return { amount: 0, error: null };
   }
   
-  // Valid horse characters: 0-9, a-l (lowercase)
-  // Bet types: W, Q, T (case insensitive), F (uppercase only)
+  // Horse characters: 0-9, a-l (lowercase only)
+  // Bet types: W, Q, T (case insensitive), F (uppercase only - to distinguish from horse 'f')
   // Pattern: (horses)(-horses)? (betType)? (amount)?
   
-  const match = cleaned.match(/^([0-9a-lA-L]+)(?:-([0-9a-lA-L]+))?([WwQqTtF])?(\d+)?$/);
+  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
   
   if (!match) {
     return { amount: 0, error: 'Invalid format' };
   }
   
-  const leftSide = match[1].toLowerCase();
-  const rightSide = match[2] ? match[2].toLowerCase() : null;
+  const leftSide = match[1];
+  const rightSide = match[2] || null;
   let betType = match[3] ? match[3].toUpperCase() : null;
   const amount = match[4] ? parseInt(match[4], 10) : 10;
   
   const hasDash = rightSide !== null;
-  
-  // Validate horse characters (only 0-9 and a-l)
-  const validHorsePattern = /^[0-9a-l]+$/;
-  if (!validHorsePattern.test(leftSide)) {
-    return { amount: 0, error: 'Invalid horse characters (use 0-9, a-l)' };
-  }
-  if (rightSide && !validHorsePattern.test(rightSide)) {
-    return { amount: 0, error: 'Invalid horse characters (use 0-9, a-l)' };
-  }
   
   // Default bet type
   if (!betType) {
