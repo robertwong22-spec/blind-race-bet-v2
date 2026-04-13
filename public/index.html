@@ -567,6 +567,11 @@ function parseBetLine(line) {
   // Remove all spaces
   let cleaned = line.replace(/\s+/g, '');
   if (!cleaned) return { amount: 0, error: null };
+
+   // Check for "no bet" input
+  if (cleaned.toLowerCase() === 'n') {
+    return { amount: 0, error: null };
+  }
   
   // Check if line ends with dash (incomplete input - user is typing)
   if (cleaned.endsWith('-')) {
@@ -599,6 +604,9 @@ function parseBetLine(line) {
   
   switch (betType) {
     case 'W':
+      if (hasDash) {
+        return { amount: 0, error: 'Win bet does not allow a dash' };
+      }
       combinations = countUniqueHorses(leftSide);
       break;
     case 'Q':
