@@ -617,10 +617,29 @@ function parseBetLine(line) {
         combinations = calculateForecast(leftSide, rightSide);
       }
       break;
-    case 'T':
+ case 'T':
       if (hasDash) {
+        const leftCount = countUniqueHorses(leftSide);
         const rightCount = countUniqueHorses(rightSide);
-        combinations = (rightCount * (rightCount - 1)) / 2;
+        
+        // Check for duplicates between sides
+        const leftHorses = new Set(leftSide.split(''));
+        const rightHorses = new Set(rightSide.split(''));
+        for (const horse of leftHorses) {
+          if (rightHorses.has(horse)) {
+            return { amount: 0, error: 'Trio cannot have same horse on both sides' };
+          }
+        }
+        
+        if (leftCount === 1) {
+          // One banker: combinations = n(n-1)/2 where n = right side horses
+          combinations = (rightCount * (rightCount - 1)) / 2;
+        } else if (leftCount === 2) {
+          // Two bankers: combinations = n where n = right side horses
+          combinations = rightCount;
+        } else {
+          return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
+        }
       }
       break;
   }
