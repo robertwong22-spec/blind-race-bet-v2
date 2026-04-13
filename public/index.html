@@ -85,7 +85,7 @@
       transition: border 0.2s;
       resize: vertical;
       min-height: 150px;
-      font-family: inherit;
+      font-family: 'Consolas', 'Monaco', monospace;
     }
 
     textarea:focus {
@@ -240,6 +240,15 @@
       color: #333;
     }
 
+    .bet-card .bet-total {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #e0d5b0;
+      font-weight: 700;
+      color: #2c5364;
+      font-size: 1rem;
+    }
+
     .reveal-buttons {
       display: flex;
       align-items: flex-end;
@@ -303,6 +312,13 @@
       font-size: 0.9rem;
       color: #444;
       line-height: 1.4;
+    }
+
+    .history-bet .h-total {
+      margin-top: 6px;
+      font-weight: 600;
+      color: #2c5364;
+      font-size: 0.9rem;
     }
 
     .hidden { display: none !important; }
@@ -369,6 +385,29 @@
       gap: 10px;
       justify-content: center;
     }
+
+    .bet-total-display {
+      background: linear-gradient(135deg, #ffd700, #ffaa00);
+      color: #1a1a2e;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+    }
+
+    .bet-input-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .bet-input-wrapper button {
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -396,8 +435,16 @@
     <label for="playerName">Your name:</label>
     <input type="text" id="playerName" />
     <label for="betInput">Your bet:</label>
-    <textarea id="betInput"></textarea>
-    <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
+    <textarea id="betInput" placeholder="Examples:
+25ad W30        (Win: 4 horses × $30 = $120)
+124-1490a Q5    (Quinella with dash)
+237ab Q10       (Quinella boxed)
+123-3789 F3     (Forecast)
+5-190ab T4      (Trio)"></textarea>
+    <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
+    <div class="bet-input-wrapper">
+      <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
+    </div>
     <p id="betStatus" class="status"></p>
   </div>
 
@@ -449,6 +496,139 @@
     let fullHistory = [];
     let currentRaceName = '';
     let currentBets = {};
+
+    // =====================================================
+    // BET CALCULATOR
+    // =====================================================
+    
+    function calculateBetTotal(betText) {
+      const lines = betText.split('\n');
+      let total = 0;
+      
+      for (const line of lines) {
+        const lineBet = parseBetLine(line);
+        total += lineBet;
+      }
+      
+      return total;
+    }
+    
+    function parseBetLine(line) {
+      // Remove all spaces and convert to lowercase for type matching
+      let cleaned = line.replace(/\s+/g, '');
+      if (!cleaned) return 0;
+      
+      // Extract bet type and amount using regex
+      // Pattern: (horses)(-horses)? (W|Q|F|T)? (number)?
+      const match = cleaned.match(/^([0-9a-z]+)(?:-([0-9a-z]+))?([wqft])?(\d+)?$/i);
+      
+      if (!match) return 0;
+      
+      const leftSide = match[1].toLowerCase();
+      const rightSide = match[2] ? match[2].toLowerCase() : null;
+      let betType = match[3] ? match[3].toUpperCase() : null;
+      const amount = match[4] ? parseInt(match[4], 10) : 10; // Default amount is 10
+      
+      const hasDash = rightSide !== null;
+      
+      // Determine default type if not specified
+      if (!betType) {
+        betType = hasDash ? 'Q' : 'W'; // Default: Q if dash, W otherwise
+      }
+      
+      // Calculate combinations based on bet type
+      let combinations = 0;
+      
+      switch (betType) {
+        case 'W':
+          // Win bet: just count unique horses on left side
+          combinations = countUniqueHorses(leftSide);
+          break;
+          
+        case 'Q':
+          if (hasDash) {
+            // Quinella with dash: left × right - n(n+1)/2 where n = duplicates
+            combinations = calculateQuinellaDash(leftSide, rightSide);
+          } else {
+            // Quinella boxed: nC2 = n(n-1)/2
+            const n = countUniqueHorses(leftSide);
+            combinations = (n * (n - 1)) / 2;
+          }
+          break;
+          
+        case 'F':
+          // Forecast: always has dash, left × right - n (where n = duplicates)
+          if (hasDash) {
+            combinations = calculateForecast(leftSide, rightSide);
+          }
+          break;
+          
+        case 'T':
+          // Trio: always has dash, format "x-yyy", combinations = nC2 of right side
+          if (hasDash) {
+            const rightCount = countUniqueHorses(rightSide);
+            combinations = (rightCount * (rightCount - 1)) / 2;
+          }
+          break;
+      }
+      
+      return combinations * amount;
+    }
+    
+    function countUniqueHorses(str) {
+      const horses = new Set(str.split(''));
+      return horses.size;
+    }
+    
+    function calculateQuinellaDash(left, right) {
+      const leftHorses = new Set(left.split(''));
+      const rightHorses = new Set(right.split(''));
+      
+      // Count duplicates (horses appearing on both sides)
+      let duplicates = 0;
+      for (const horse of leftHorses) {
+        if (rightHorses.has(horse)) {
+          duplicates++;
+        }
+      }
+      
+      // Total combinations: left × right - n(n+1)/2 where n = duplicates
+      const rawCombos = leftHorses.size * rightHorses.size;
+      const subtract = (duplicates * (duplicates + 1)) / 2;
+      
+      return rawCombos - subtract;
+    }
+    
+    function calculateForecast(left, right) {
+      const leftHorses = new Set(left.split(''));
+      const rightHorses = new Set(right.split(''));
+      
+      // Count duplicates
+      let duplicates = 0;
+      for (const horse of leftHorses) {
+        if (rightHorses.has(horse)) {
+          duplicates++;
+        }
+      }
+      
+      // Total combinations: left × right - n where n = duplicates
+      const rawCombos = leftHorses.size * rightHorses.size;
+      
+      return rawCombos - duplicates;
+    }
+    
+    function updateBetTotal() {
+      const betText = document.getElementById('betInput').value;
+      const total = calculateBetTotal(betText);
+      document.getElementById('betTotalDisplay').textContent = 'Total: $' + total;
+    }
+    
+    // Attach event listener to bet input
+    document.getElementById('betInput').addEventListener('input', updateBetTotal);
+
+    // =====================================================
+    // ORIGINAL FUNCTIONS
+    // =====================================================
 
     function show(id) {
       ['setupScreen','nameScreen','betScreen','waitingScreen','revealScreen'].forEach(s => {
@@ -513,7 +693,6 @@
       text += '================================\n\n';
 
       const allRounds = [...fullHistory];
-      // Add current round if it has bets
       if (currentRaceName && Object.keys(currentBets).length > 0) {
         const lastInHistory = fullHistory[fullHistory.length - 1];
         const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
@@ -528,7 +707,8 @@
         allRounds.forEach((round, i) => {
           text += '--- ' + round.raceName + ' ---\n';
           for (const [player, bet] of Object.entries(round.bets)) {
-            text += '\n' + player + ':\n';
+            const total = calculateBetTotal(bet);
+            text += '\n' + player + ' (Total: $' + total + '):\n';
             text += bet + '\n';
           }
           text += '\n';
@@ -550,11 +730,13 @@
       const container = document.getElementById('cardsContainer');
       container.innerHTML = '';
       for (const [player, bet] of Object.entries(bets)) {
+        const total = calculateBetTotal(bet);
         const card = document.createElement('div');
         card.className = 'bet-card';
         card.innerHTML = `
           <div class="player-name">${escHtml(player)}</div>
           <div class="bet-content">${escHtml(bet)}</div>
+          <div class="bet-total">Total: $${total}</div>
         `;
         container.appendChild(card);
       }
@@ -573,9 +755,11 @@
         html += '<div class="history-round">';
         html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
         for (const [player, bet] of Object.entries(round.bets)) {
+          const total = calculateBetTotal(bet);
           html += '<div class="history-bet">';
           html += '<div class="h-name">' + escHtml(player) + '</div>';
           html += '<div class="h-content">' + escHtml(bet) + '</div>';
+          html += '<div class="h-total">Total: $' + total + '</div>';
           html += '</div>';
         }
         html += '</div>';
@@ -627,6 +811,7 @@
       currentRaceName = data.raceName;
       document.getElementById('raceTitle').textContent = data.raceName;
       document.getElementById('betInput').value = '';
+      document.getElementById('betTotalDisplay').textContent = 'Total: $0';
       document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
       show('betScreen');
     });
