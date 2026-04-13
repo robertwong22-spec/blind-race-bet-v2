@@ -1,843 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Betting Game</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bet Calculator</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    * {
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      color: #fff;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
       padding: 20px;
+      margin: 0;
     }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 8px;
-      text-align: center;
-    }
-
-    h2 {
-      font-size: 1.3rem;
-      color: #ffd700;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-
-    .container {
+    
+    .calculator {
+      background: #1e3a5f;
+      border-radius: 20px;
+      padding: 30px;
       width: 100%;
-      max-width: 700px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 16px;
-      padding: 28px;
-      backdrop-filter: blur(10px);
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    
+    h2 {
+      color: #ffd700;
+      text-align: center;
+      margin: 0 0 25px 0;
+      font-size: 28px;
+    }
+    
+    .input-group {
       margin-bottom: 20px;
     }
-
+    
     label {
       display: block;
-      font-size: 0.95rem;
-      margin-bottom: 6px;
-      color: #ccc;
+      color: #a0a0a0;
+      margin-bottom: 8px;
+      font-size: 14px;
     }
-
-    input[type="text"],
-    input[type="number"],
-    input[type="password"] {
-      padding: 12px 14px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      background: #ffffff;
-      color: #222;
-      font-size: 1rem;
-      margin-bottom: 14px;
-      outline: none;
-      transition: border 0.2s;
+    
+    input[type="text"] {
       width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      background: #fff;
     }
-
-    input:focus {
-      border-color: #ffd700;
-    }
-
-    #playerName {
-      width: 25%;
-      min-width: 120px;
-    }
-
+    
     textarea {
       width: 100%;
-      padding: 12px 14px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      background: #ffffff;
-      color: #222;
-      font-size: 1rem;
-      margin-bottom: 14px;
-      outline: none;
-      transition: border 0.2s;
-      resize: vertical;
-      min-height: 150px;
-      font-family: 'Consolas', 'Monaco', monospace;
-    }
-
-    textarea:focus {
-      border-color: #ffd700;
-    }
-
-    textarea::placeholder,
-    input::placeholder {
-      color: rgba(0,0,0,0.35);
-    }
-
-    button {
-      padding: 12px 28px;
+      padding: 15px;
       border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      margin-right: 8px;
-      margin-bottom: 8px;
-    }
-
-    button:active {
-      transform: scale(0.97);
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #ffd700, #ffaa00);
-      color: #1a1a2e;
-      box-shadow: 0 4px 15px rgba(255,215,0,0.3);
-    }
-
-    .btn-primary:hover {
-      box-shadow: 0 6px 20px rgba(255,215,0,0.5);
-    }
-
-    .btn-secondary {
-      background: rgba(255,255,255,0.15);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.25);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255,255,255,0.25);
-    }
-
-    .btn-danger {
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
-      color: #fff;
-      box-shadow: 0 4px 15px rgba(231,76,60,0.3);
-    }
-
-    .btn-danger:hover {
-      box-shadow: 0 6px 20px rgba(231,76,60,0.5);
-    }
-
-    .btn-newrace {
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
-      color: #fff;
-      padding: 6px 16px;
-      font-size: 0.8rem;
-      box-shadow: 0 2px 8px rgba(231,76,60,0.3);
-      margin-right: 0;
-      margin-bottom: 0;
-    }
-
-    .btn-newrace:hover {
-      box-shadow: 0 4px 12px rgba(231,76,60,0.5);
-    }
-
-    .btn-download {
-      background: linear-gradient(135deg, #2ecc71, #27ae60);
-      color: #fff;
-      padding: 6px 16px;
-      font-size: 0.8rem;
-      box-shadow: 0 2px 8px rgba(46,204,113,0.3);
-      margin-right: 0;
-      margin-bottom: 0;
-    }
-
-    .btn-download:hover {
-      box-shadow: 0 4px 12px rgba(46,204,113,0.5);
-    }
-
-    .status {
-      text-align: center;
-      font-size: 1.1rem;
-      padding: 16px;
-      color: #aee;
-    }
-
-    .waiting-dots::after {
-      content: '';
-      animation: dots 1.5s steps(4, end) infinite;
-    }
-
-    @keyframes dots {
-      0% { content: ''; }
-      25% { content: '.'; }
-      50% { content: '..'; }
-      75% { content: '...'; }
-    }
-
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 16px;
-      margin-top: 16px;
-    }
-
-    .bet-card {
-      background: #ffffff;
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      padding: 18px;
-      animation: cardIn 0.4s ease-out both;
-    }
-
-    .bet-card:nth-child(1) { animation-delay: 0s; }
-    .bet-card:nth-child(2) { animation-delay: 0.1s; }
-    .bet-card:nth-child(3) { animation-delay: 0.2s; }
-    .bet-card:nth-child(4) { animation-delay: 0.3s; }
-    .bet-card:nth-child(5) { animation-delay: 0.4s; }
-    .bet-card:nth-child(6) { animation-delay: 0.5s; }
-
-    @keyframes cardIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px) scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    .bet-card .player-name {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #b8860b;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #e0d5b0;
-    }
-
-    .bet-card .bet-content {
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      color: #333;
-    }
-
-    .bet-card .bet-total {
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px solid #e0d5b0;
-      font-weight: 700;
-      color: #2c5364;
-      font-size: 1rem;
-    }
-
-    .reveal-buttons {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-top: 24px;
-    }
-
-    .reveal-buttons-left {
-      display: flex;
-      align-items: center;
-    }
-
-    .reveal-buttons-right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 6px;
-    }
-
-    .history-section {
-      margin-top: 24px;
-      border-top: 1px solid rgba(255,255,255,0.15);
-      padding-top: 20px;
-    }
-
-    .history-section h3 {
-      font-size: 1.1rem;
-      color: #ffd700;
-      margin-bottom: 12px;
-    }
-
-    .history-round {
-      background: #ffffff;
       border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 12px;
+      font-size: 16px;
+      font-family: monospace;
+      resize: vertical;
+      min-height: 120px;
     }
-
-    .history-round .round-title {
-      font-weight: 600;
-      color: #2c5364;
-      margin-bottom: 8px;
+    
+    .error-display {
+      background: #2a4a6f;
+      border-radius: 10px;
+      padding: 10px 15px;
+      margin-top: 10px;
+      display: none;
     }
-
-    .history-bet {
-      margin-bottom: 8px;
-      padding: 10px;
-      background: #f5f5f5;
-      border-radius: 8px;
-    }
-
-    .history-bet .h-name {
-      font-weight: 600;
-      color: #b8860b;
-      margin-bottom: 4px;
-    }
-
-    .history-bet .h-content {
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 0.9rem;
-      color: #444;
-      line-height: 1.4;
-    }
-
-    .history-bet .h-total {
-      margin-top: 6px;
-      font-weight: 600;
-      color: #2c5364;
-      font-size: 0.9rem;
-    }
-
-    .hidden { display: none !important; }
-
-    .submitted-msg {
-      text-align: center;
-      color: #7bed9f;
-      font-size: 1.1rem;
-      padding: 20px;
-    }
-
-    .submitted-msg .check {
-      font-size: 2rem;
+    
+    .error-display.has-errors {
       display: block;
-      margin-bottom: 8px;
     }
-
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      backdrop-filter: blur(4px);
+    
+    .error-line {
+      color: #f44336;
+      font-size: 14px;
+      margin: 4px 0;
     }
-
-    .modal-box {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 16px;
-      padding: 28px;
-      width: 90%;
-      max-width: 400px;
-      text-align: center;
-    }
-
-    .modal-box h3 {
-      font-size: 1.2rem;
-      margin-bottom: 6px;
-      color: #ffd700;
-    }
-
-    .modal-box p {
-      font-size: 0.9rem;
-      color: #aaa;
-      margin-bottom: 16px;
-    }
-
-    .modal-box input[type="password"] {
-      width: 100%;
-    }
-
-    .modal-error {
-      color: #e74c3c;
-      font-size: 0.9rem;
-      margin-bottom: 12px;
-      min-height: 1.2em;
-    }
-
-    .modal-buttons {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .bet-total-display {
-      background: linear-gradient(135deg, #ffd700, #ffaa00);
+    
+    .total-display {
+      background: #ffd700;
       color: #1a1a2e;
-      padding: 12px 18px;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 14px;
       text-align: center;
-      box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
     }
-
-    .bet-input-wrapper {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
+    
+    .submit-btn {
+      background: #ffa500;
+      color: #1a1a2e;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-
-    .bet-input-wrapper button {
-      margin: 0;
+    
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(255, 165, 0, 0.4);
     }
   </style>
 </head>
 <body>
-
-  <h1>🏇 Betting Game</h1>
-
-  <!-- SCREEN: Setup -->
-  <div id="setupScreen" class="container">
-    <label for="numPlayers">How many players today?</label>
-    <input type="number" id="numPlayers" min="2" max="20" value="3" placeholder="Number of players" />
-    <button class="btn-primary" onclick="startDay()">Start Racing Day</button>
-  </div>
-
-  <!-- SCREEN: Name the round -->
-  <div id="nameScreen" class="container hidden">
-    <h2 id="raceCounterLabel">Race #1</h2>
-    <label for="raceName">Name this race:</label>
-    <input type="text" id="raceName" placeholder="e.g. 3:30 at Flemington" />
-    <button class="btn-primary" onclick="submitRaceName()">Open Betting</button>
-  </div>
-
-<!-- SCREEN: Place bet -->
-  <div id="betScreen" class="container hidden">
-    <h2 id="raceTitle">Race</h2>
-    <label for="playerName">Your name:</label>
-    <input type="text" id="playerName" />
-    <label for="betInput">Your bet:</label>
-    <textarea id="betInput" placeholder="Examples:
-25ad W30        (Win: 4 horses × $30 = $120)
-124-1490a Q5    (Quinella with dash)
-237ab Q10       (Quinella boxed)
-123-3789 F3     (Forecast)
-5-190ab T4      (Trio)"></textarea>
-    <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
-    <div class="bet-input-wrapper">
-      <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
+  <div class="calculator">
+    <h2>🏇</h2>
+    
+    <div class="input-group">
+      <label>Your name:</label>
+      <input type="text" id="nameInput" placeholder="Enter your name">
     </div>
-    <p id="betStatus" class="status"></p>
-  </div>
-
-  <!-- SCREEN: Submitted waiting -->
-  <div id="waitingScreen" class="container hidden">
-    <h2 id="waitRaceTitle">Race</h2>
-    <div class="submitted-msg">
-      <span class="check">✅</span>
-      Bet submitted! Waiting for others<span class="waiting-dots"></span>
+    
+    <div class="input-group">
+      <label>Your bet:</label>
+      <textarea id="betInput" placeholder="e.g. 567ab W10"></textarea>
+      <div class="error-display" id="errorDisplay"></div>
     </div>
-    <p id="waitStatus" class="status"></p>
+    
+    <div class="total-display" id="totalDisplay">Total: $0</div>
+    
+    <button class="submit-btn">Submit Bet</button>
   </div>
 
-  <!-- SCREEN: Reveal -->
-  <div id="revealScreen" class="container hidden">
-    <h2 id="revealRaceTitle">Race Results</h2>
-    <div id="cardsContainer" class="cards-grid"></div>
-    <div class="reveal-buttons">
-      <div class="reveal-buttons-left">
-        <button class="btn-primary" onclick="nextRound()">Next Race</button>
-      </div>
-      <div class="reveal-buttons-right">
-        <button class="btn-download" onclick="downloadHistory()">📥 Download</button>
-        <button class="btn-newrace" onclick="showPasswordModal()">Newday</button>
-      </div>
-    </div>
-    <div id="historyContainer" class="history-section hidden"></div>
-  </div>
-
-  <!-- PASSWORD MODAL -->
-  <div id="passwordModal" class="modal-overlay hidden">
-    <div class="modal-box">
-      <h3>🔒 Admin Password</h3>
-      <p>Enter the password to reset the racing day.</p>
-      <input type="password" id="modalPassword" placeholder="Password" />
-      <div id="modalError" class="modal-error"></div>
-      <div class="modal-buttons">
-        <button class="btn-secondary" onclick="closePasswordModal()">Cancel</button>
-        <button class="btn-danger" onclick="confirmNewDay()">Reset</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
-    let hasSubmitted = false;
-    let currentRaceCounter = 1;
-    let fullHistory = [];
-    let currentRaceName = '';
-    let currentBets = {};
+    const betInput = document.getElementById('betInput');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const errorDisplay = document.getElementById('errorDisplay');
 
-    // =====================================================
-    // BET CALCULATOR
-    // =====================================================
-    
-    function calculateBetTotal(betText) {
-      const lines = betText.split('\n');
-      let total = 0;
-      
-      for (const line of lines) {
-        const lineBet = parseBetLine(line);
-        total += lineBet;
-      }
-      
-      return total;
-    }
-    
-  function parseBetLine(line) {
-  // Remove all spaces
-  let cleaned = line.replace(/\s+/g, '');
-  if (!cleaned) return 0;
-  
-  // Valid horse characters: 0-9, a-l (lowercase)
-  // Bet types: W, Q, T (case insensitive), F (uppercase only)
-  // Pattern: (horses)(-horses)? (betType)? (amount)?
-  
-  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
-  
-  if (!match) return 0;
-  
-  const leftSide = match[1].toLowerCase();
-  const rightSide = match[2] ? match[2].toLowerCase() : null;
-  let betType = match[3] ? match[3].toUpperCase() : null;
-  const amount = match[4] ? parseInt(match[4], 10) : 10;
-  
-  const hasDash = rightSide !== null;
-  
-  // Default bet type
-  if (!betType) {
-    betType = hasDash ? 'Q' : 'W';
-  }
-  
-  let combinations = 0;
-  
-  switch (betType) {
-    case 'W':
-      combinations = countUniqueHorses(leftSide);
-      break;
-    case 'Q':
-      if (hasDash) {
-        combinations = calculateQuinellaDash(leftSide, rightSide);
-      } else {
-        const n = countUniqueHorses(leftSide);
-        combinations = (n * (n - 1)) / 2;
-      }
-      break;
-    case 'F':
-      if (hasDash) {
-        combinations = calculateForecast(leftSide, rightSide);
-      }
-      break;
-    case 'T':
-      if (hasDash) {
-        const rightCount = countUniqueHorses(rightSide);
-        combinations = (rightCount * (rightCount - 1)) / 2;
-      }
-      break;
-  }
-  
-  return combinations * amount;
-}
-    
     function countUniqueHorses(str) {
-      const horses = new Set(str.split(''));
-      return horses.size;
+      return new Set(str.split('')).size;
     }
-    
+
     function calculateQuinellaDash(left, right) {
       const leftHorses = new Set(left.split(''));
       const rightHorses = new Set(right.split(''));
-      
-      // Count duplicates (horses appearing on both sides)
-      let duplicates = 0;
-      for (const horse of leftHorses) {
-        if (rightHorses.has(horse)) {
-          duplicates++;
+      let count = 0;
+      for (const l of leftHorses) {
+        for (const r of rightHorses) {
+          if (l !== r) count++;
         }
       }
-      
-      // Total combinations: left × right - n(n+1)/2 where n = duplicates
-      const rawCombos = leftHorses.size * rightHorses.size;
-      const subtract = (duplicates * (duplicates + 1)) / 2;
-      
-      return rawCombos - subtract;
+      return count / 2 + countCommon(leftHorses, rightHorses);
     }
-    
+
+    function countCommon(setA, setB) {
+      let count = 0;
+      for (const item of setA) {
+        if (setB.has(item)) count++;
+      }
+      return count;
+    }
+
     function calculateForecast(left, right) {
       const leftHorses = new Set(left.split(''));
       const rightHorses = new Set(right.split(''));
-      
-      // Count duplicates
-      let duplicates = 0;
-      for (const horse of leftHorses) {
-        if (rightHorses.has(horse)) {
-          duplicates++;
+      let count = 0;
+      for (const l of leftHorses) {
+        for (const r of rightHorses) {
+          if (l !== r) count++;
         }
       }
+      return count;
+    }
+
+    function parseBetLine(line) {
+      let cleaned = line.replace(/\s+/g, '');
+      if (!cleaned) return { total: 0, valid: null };
       
-      // Total combinations: left × right - n where n = duplicates
-      const rawCombos = leftHorses.size * rightHorses.size;
+      const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
       
-      return rawCombos - duplicates;
-    }
-    
-    function updateBetTotal() {
-      const betText = document.getElementById('betInput').value;
-      const total = calculateBetTotal(betText);
-      document.getElementById('betTotalDisplay').textContent = 'Total: $' + total;
-    }
-    
-    // Attach event listener to bet input
-    document.getElementById('betInput').addEventListener('input', updateBetTotal);
-
-    // =====================================================
-    // ORIGINAL FUNCTIONS
-    // =====================================================
-
-    function show(id) {
-      ['setupScreen','nameScreen','betScreen','waitingScreen','revealScreen'].forEach(s => {
-        document.getElementById(s).classList.add('hidden');
-      });
-      document.getElementById(id).classList.remove('hidden');
-    }
-
-    function startDay() {
-      const num = document.getElementById('numPlayers').value;
-      socket.emit('setPlayers', num);
-    }
-
-    function submitRaceName() {
-      const name = document.getElementById('raceName').value.trim();
-      if (!name) return;
-      socket.emit('setRaceName', name);
-    }
-
-    function submitBet() {
-      const name = document.getElementById('playerName').value.trim();
-      const bet = document.getElementById('betInput').value.trim();
-      if (!name || !bet) return;
-      socket.emit('placeBet', { name, bet });
-      hasSubmitted = true;
-      document.getElementById('waitRaceTitle').textContent = document.getElementById('raceTitle').textContent;
-      show('waitingScreen');
-    }
-
-    function nextRound() {
-      hasSubmitted = false;
-      socket.emit('newRound');
-    }
-
-    function showPasswordModal() {
-      document.getElementById('modalPassword').value = '';
-      document.getElementById('modalError').textContent = '';
-      document.getElementById('passwordModal').classList.remove('hidden');
-      document.getElementById('modalPassword').focus();
-    }
-
-    function closePasswordModal() {
-      document.getElementById('passwordModal').classList.add('hidden');
-    }
-
-    function confirmNewDay() {
-      const pw = document.getElementById('modalPassword').value;
-      if (!pw) {
-        document.getElementById('modalError').textContent = 'Please enter a password.';
-        return;
+      if (!match) return { total: 0, valid: false };
+      
+      const leftSide = match[1].toLowerCase();
+      const rightSide = match[2] ? match[2].toLowerCase() : null;
+      let betType = match[3] ? match[3].toUpperCase() : null;
+      const amount = match[4] ? parseInt(match[4], 10) : 10;
+      
+      const hasDash = rightSide !== null;
+      
+      if (!betType) {
+        betType = hasDash ? 'Q' : 'W';
       }
-      socket.emit('newRacingDay', pw);
-    }
-
-    document.getElementById('modalPassword').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') confirmNewDay();
-    });
-
-    function downloadHistory() {
-      let text = '=== BETTING GAME HISTORY ===\n';
-      text += 'Downloaded: ' + new Date().toLocaleString() + '\n';
-      text += '================================\n\n';
-
-      const allRounds = [...fullHistory];
-      if (currentRaceName && Object.keys(currentBets).length > 0) {
-        const lastInHistory = fullHistory[fullHistory.length - 1];
-        const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
-        if (!alreadyIncluded) {
-          allRounds.push({ raceName: currentRaceName, bets: currentBets });
-        }
-      }
-
-      if (allRounds.length === 0) {
-        text += 'No bets recorded yet.\n';
-      } else {
-        allRounds.forEach((round, i) => {
-          text += '--- ' + round.raceName + ' ---\n';
-          for (const [player, bet] of Object.entries(round.bets)) {
-            const total = calculateBetTotal(bet);
-            text += '\n' + player + ' (Total: $' + total + '):\n';
-            text += bet + '\n';
+      
+      let combinations = 0;
+      
+      switch (betType) {
+        case 'W':
+          combinations = countUniqueHorses(leftSide);
+          break;
+        case 'Q':
+          if (hasDash) {
+            combinations = calculateQuinellaDash(leftSide, rightSide);
+          } else {
+            const n = countUniqueHorses(leftSide);
+            if (n < 2) return { total: 0, valid: false };
+            combinations = (n * (n - 1)) / 2;
           }
-          text += '\n';
-        });
+          break;
+        case 'F':
+          if (hasDash) {
+            combinations = calculateForecast(leftSide, rightSide);
+          } else {
+            return { total: 0, valid: false };
+          }
+          break;
+        case 'T':
+          if (hasDash) {
+            const rightCount = countUniqueHorses(rightSide);
+            if (rightCount < 2) return { total: 0, valid: false };
+            combinations = (rightCount * (rightCount - 1)) / 2;
+          } else {
+            return { total: 0, valid: false };
+          }
+          break;
       }
-
-      const blob = new Blob([text], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      
+      if (combinations === 0) return { total: 0, valid: false };
+      
+      return { total: combinations * amount, valid: true };
     }
 
-    function renderCards(bets) {
-      const container = document.getElementById('cardsContainer');
-      container.innerHTML = '';
-      for (const [player, bet] of Object.entries(bets)) {
-        const total = calculateBetTotal(bet);
-        const card = document.createElement('div');
-        card.className = 'bet-card';
-        card.innerHTML = `
-          <div class="player-name">${escHtml(player)}</div>
-          <div class="bet-content">${escHtml(bet)}</div>
-          <div class="bet-total">Total: $${total}</div>
-        `;
-        container.appendChild(card);
-      }
-    }
-
-    function renderHistory(history) {
-      const container = document.getElementById('historyContainer');
-      if (!history || history.length <= 1) {
-        container.classList.add('hidden');
-        return;
-      }
-      container.classList.remove('hidden');
-      let html = '<h3>📋 Previous Races</h3>';
-      for (let i = 0; i < history.length - 1; i++) {
-        const round = history[i];
-        html += '<div class="history-round">';
-        html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
-        for (const [player, bet] of Object.entries(round.bets)) {
-          const total = calculateBetTotal(bet);
-          html += '<div class="history-bet">';
-          html += '<div class="h-name">' + escHtml(player) + '</div>';
-          html += '<div class="h-content">' + escHtml(bet) + '</div>';
-          html += '<div class="h-total">Total: $' + total + '</div>';
-          html += '</div>';
+    function updateTotal() {
+      const lines = betInput.value.split('\n');
+      let grandTotal = 0;
+      let errors = [];
+      
+      lines.forEach((line, index) => {
+        const result = parseBetLine(line);
+        grandTotal += result.total;
+        
+        if (result.valid === false) {
+          errors.push(`Line ${index + 1}: "${line.trim()}" ✗`);
         }
-        html += '</div>';
-      }
-      container.innerHTML = html;
-    }
-
-    function escHtml(str) {
-      const d = document.createElement('div');
-      d.textContent = str;
-      return d.innerHTML;
-    }
-
-    // Socket events
-    socket.on('state', (data) => {
-      currentRaceCounter = data.raceCounter || 1;
-      fullHistory = data.history || [];
-      if (data.revealed && data.bets) {
-        currentRaceName = data.raceName;
-        currentBets = data.bets;
-        document.getElementById('revealRaceTitle').textContent = data.raceName;
-        renderCards(data.bets);
-        renderHistory(data.history);
-        show('revealScreen');
-      } else if (data.gameStarted && data.raceName) {
-        currentRaceName = data.raceName;
-        document.getElementById('raceTitle').textContent = data.raceName;
-        show('betScreen');
-        document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
-      } else if (data.gameStarted) {
-        document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
-        document.getElementById('raceName').value = 'R' + data.raceCounter;
-        show('nameScreen');
+      });
+      
+      totalDisplay.textContent = `Total: $${grandTotal}`;
+      
+      if (errors.length > 0) {
+        errorDisplay.innerHTML = errors.map(e => `<div class="error-line">${e}</div>`).join('');
+        errorDisplay.classList.add('has-errors');
       } else {
-        show('setupScreen');
+        errorDisplay.innerHTML = '';
+        errorDisplay.classList.remove('has-errors');
       }
-    });
+    }
 
-    socket.on('nameRound', (data) => {
-      hasSubmitted = false;
-      currentRaceCounter = data.raceCounter;
-      document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
-      document.getElementById('raceName').value = 'R' + data.raceCounter;
-      show('nameScreen');
-    });
-
-    socket.on('roundStart', (data) => {
-      hasSubmitted = false;
-      currentRaceName = data.raceName;
-      document.getElementById('raceTitle').textContent = data.raceName;
-      document.getElementById('betInput').value = '';
-      document.getElementById('betTotalDisplay').textContent = 'Total: $0';
-      document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
-      show('betScreen');
-    });
-
-    socket.on('betUpdate', (data) => {
-      document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
-      document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
-    });
-
-    socket.on('reveal', (data) => {
-      currentRaceName = data.raceName;
-      currentBets = data.bets;
-      fullHistory = data.history || [];
-      document.getElementById('revealRaceTitle').textContent = data.raceName;
-      renderCards(data.bets);
-      renderHistory(data.history);
-      show('revealScreen');
-    });
-
-    socket.on('resetAll', () => {
-      hasSubmitted = false;
-      currentRaceCounter = 1;
-      fullHistory = [];
-      currentBets = {};
-      currentRaceName = '';
-      document.getElementById('numPlayers').value = 3;
-      closePasswordModal();
-      show('setupScreen');
-    });
-
-    socket.on('authError', (msg) => {
-      document.getElementById('modalError').textContent = msg;
-    });
+    betInput.addEventListener('input', updateTotal);
   </script>
 </body>
 </html>
