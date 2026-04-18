@@ -29,7 +29,8 @@ io.on('connection', (socket) => {
   // Send current state to new connections
   socket.emit('state', {
     ...gameState,
-    betCount: Object.keys(gameState.bets).length
+    betCount: Object.keys(gameState.bets).length,
+    submittedNames: Object.keys(gameState.bets)
   });
 
   socket.on('setPlayers', (num) => {
@@ -51,7 +52,8 @@ io.on('connection', (socket) => {
     if (gameState.revealed) return;
     gameState.bets[name] = bet;
     const count = Object.keys(gameState.bets).length;
-    io.emit('betUpdate', { count, target: gameState.target });
+    const submittedNames = Object.keys(gameState.bets);
+    io.emit('betUpdate', { count, target: gameState.target, submittedNames });
     
     if (count >= gameState.target) {
       gameState.revealed = true;
