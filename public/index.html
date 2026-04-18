@@ -336,6 +336,55 @@
       margin-bottom: 8px;
     }
 
+    .submitted-names-section {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+    }
+
+    .submitted-names-section h4 {
+      font-size: 0.95rem;
+      color: #ffd700;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .submitted-names-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .submitted-name-tag {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: tagIn 0.3s ease-out both;
+    }
+
+    .submitted-name-tag .tag-check {
+      font-size: 0.8rem;
+    }
+
+    @keyframes tagIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -484,6 +533,10 @@
       Bet submitted! Waiting for others<span class="waiting-dots"></span>
     </div>
     <p id="waitStatus" class="status"></p>
+    <div class="submitted-names-section">
+      <h4>✓ Submitted</h4>
+      <div id="submittedNamesList" class="submitted-names-list"></div>
+    </div>
   </div>
 
   <!-- SCREEN: Reveal -->
@@ -524,6 +577,7 @@
     let fullHistory = [];
     let currentRaceName = '';
     let currentBets = {};
+    let submittedNames = [];
 
     // =====================================================
     // BET CALCULATOR
@@ -865,6 +919,17 @@ function parseBetLine(line) {
       container.innerHTML = html;
     }
 
+    function renderSubmittedNames(names) {
+      const container = document.getElementById('submittedNamesList');
+      container.innerHTML = '';
+      for (const name of names) {
+        const tag = document.createElement('span');
+        tag.className = 'submitted-name-tag';
+        tag.innerHTML = `<span class="tag-check">✓</span>${escHtml(name)}`;
+        container.appendChild(tag);
+      }
+    }
+
     function escHtml(str) {
       const d = document.createElement('div');
       d.textContent = str;
@@ -875,6 +940,7 @@ function parseBetLine(line) {
     socket.on('state', (data) => {
       currentRaceCounter = data.raceCounter || 1;
       fullHistory = data.history || [];
+      submittedNames = data.submittedNames || [];
       if (data.revealed && data.bets) {
         currentRaceName = data.raceName;
         currentBets = data.bets;
@@ -885,8 +951,9 @@ function parseBetLine(line) {
       } else if (data.gameStarted && data.raceName) {
         currentRaceName = data.raceName;
         document.getElementById('raceTitle').textContent = data.raceName;
-        show('betScreen');
         document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
+        renderSubmittedNames(submittedNames);
+        show('betScreen');
       } else if (data.gameStarted) {
         document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
         document.getElementById('raceName').value = 'R' + data.raceCounter;
@@ -899,6 +966,7 @@ function parseBetLine(line) {
     socket.on('nameRound', (data) => {
       hasSubmitted = false;
       currentRaceCounter = data.raceCounter;
+      submittedNames = [];
       document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
       document.getElementById('raceName').value = 'R' + data.raceCounter;
       show('nameScreen');
@@ -907,17 +975,21 @@ function parseBetLine(line) {
     socket.on('roundStart', (data) => {
       hasSubmitted = false;
       currentRaceName = data.raceName;
+      submittedNames = [];
       document.getElementById('raceTitle').textContent = data.raceName;
       document.getElementById('betInput').value = '';
       document.getElementById('betTotalDisplay').textContent = 'Total: $0';
       document.getElementById('betErrorsContainer').innerHTML = '';
       document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
+      renderSubmittedNames([]);
       show('betScreen');
     });
 
     socket.on('betUpdate', (data) => {
+      submittedNames = data.submittedNames || [];
       document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
       document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
+      renderSubmittedNames(submittedNames);
     });
 
     socket.on('reveal', (data) => {
@@ -936,6 +1008,7 @@ function parseBetLine(line) {
       fullHistory = [];
       currentBets = {};
       currentRaceName = '';
+      submittedNames = [];
       document.getElementById('numPlayers').value = 3;
       closePasswordModal();
       show('setupScreen');
