@@ -20,7 +20,8 @@ let gameState = {
   raceName: '',
   bets: {},
   revealed: false,
-  history: []
+  history: [],
+  ejectedPlayers: []
 };
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
@@ -38,6 +39,7 @@ io.on('connection', (socket) => {
     gameState.gameStarted = true;
     gameState.raceCounter = 1;
     gameState.history = [];
+    gameState.ejectedPlayers = [];
     io.emit('nameRound', { raceCounter: gameState.raceCounter });
   });
 
@@ -45,6 +47,7 @@ io.on('connection', (socket) => {
     gameState.raceName = name;
     gameState.bets = {};
     gameState.revealed = false;
+    gameState.ejectedPlayers = [];
     io.emit('roundStart', { raceName: name, target: gameState.target });
   });
 
@@ -59,37 +62,44 @@ io.on('connection', (socket) => {
       gameState.revealed = true;
       gameState.history.push({
         raceName: gameState.raceName,
-        bets: { ...gameState.bets }
+        bets: { ...gameState.bets },
+        ejectedPlayers: []
       });
       io.emit('reveal', {
         raceName: gameState.raceName,
         bets: gameState.bets,
-        history: gameState.history
+        history: gameState.history,
+        ejectedPlayers: []
       });
     }
   });
 
-  // New: Eject race handler
   socket.on('ejectRace', () => {
     if (gameState.revealed || !gameState.raceName) return;
     
-    // Find players who haven't submitted - create placeholder entries
-    const submittedCount = Object.keys(gameState.bets).length;
+    // Find players who haven't submitted
+    const submittedPlayers = Object.keys(gameState.bets);
     const ejectedPlayers = [];
     
-    for (let i = submittedCount + 1; i <= gameState.target; i++) {
+    // Create placeholder entries for non-submitted players
+    // We'll mark them with a special value
+    for (let i = submittedPlayers.length + 1; i <= gameState.target; i++) {
       const ejectedName = `Player ${i} (not submitted)`;
       gameState.bets[ejectedName] = '(No bet submitted)';
       ejectedPlayers.push(ejectedName);
     }
     
     gameState.revealed = true;
+    gameState.ejectedPlayers = ejectedPlayers;
     
     gameState.history.push({
       raceName: gameState.raceName,
       bets: { ...gameState.bets },
       ejectedPlayers: ejectedPlayers
     });
+    
+    // Notify all clients that the race was ejected
+    io.emit('raceEjected', { ejectedPlayers });
     
     io.emit('reveal', {
       raceName: gameState.raceName,
@@ -104,6 +114,7 @@ io.on('connection', (socket) => {
     gameState.raceName = '';
     gameState.bets = {};
     gameState.revealed = false;
+    gameState.ejectedPlayers = [];
     io.emit('nameRound', { raceCounter: gameState.raceCounter });
   });
 
@@ -116,7 +127,8 @@ io.on('connection', (socket) => {
         raceName: '',
         bets: {},
         revealed: false,
-        history: []
+        history: [],
+        ejectedPlayers: []
       };
       io.emit('resetAll');
     } else {
