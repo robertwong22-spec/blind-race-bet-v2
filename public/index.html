@@ -143,6 +143,18 @@
       box-shadow: 0 6px 20px rgba(231,76,60,0.5);
     }
 
+    .btn-eject {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 15px rgba(231,76,60,0.3);
+    }
+
+    .btn-eject:hover {
+      box-shadow: 0 6px 20px rgba(231,76,60,0.5);
+    }
+
     .btn-newrace {
       background: linear-gradient(135deg, #e74c3c, #c0392b);
       color: #fff;
@@ -203,6 +215,20 @@
       border-radius: 12px;
       padding: 18px;
       animation: cardIn 0.4s ease-out both;
+    }
+
+    .bet-card.ejected {
+      background: #f8f8f8;
+      border: 2px dashed #ccc;
+    }
+
+    .bet-card.ejected .player-name {
+      color: #999;
+    }
+
+    .bet-card.ejected .bet-content {
+      color: #999;
+      font-style: italic;
     }
 
     .bet-card:nth-child(1) { animation-delay: 0s; }
@@ -300,10 +326,19 @@
       border-radius: 8px;
     }
 
+    .history-bet.ejected {
+      background: #f0f0f0;
+      border: 1px dashed #ccc;
+    }
+
     .history-bet .h-name {
       font-weight: 600;
       color: #b8860b;
       margin-bottom: 4px;
+    }
+
+    .history-bet.ejected .h-name {
+      color: #999;
     }
 
     .history-bet .h-content {
@@ -312,6 +347,11 @@
       font-size: 0.9rem;
       color: #444;
       line-height: 1.4;
+    }
+
+    .history-bet.ejected .h-content {
+      color: #999;
+      font-style: italic;
     }
 
     .history-bet .h-total {
@@ -383,6 +423,19 @@
         opacity: 1;
         transform: scale(1);
       }
+    }
+
+    .eject-section {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      text-align: center;
+    }
+
+    .eject-section p {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 10px;
     }
 
     .modal-overlay {
@@ -510,7 +563,7 @@
     <button class="btn-primary" onclick="submitRaceName()">Open Betting</button>
   </div>
 
-<!-- SCREEN: Place bet -->
+  <!-- SCREEN: Place bet -->
   <div id="betScreen" class="container hidden">
     <h2 id="raceTitle">Race</h2>
     <label for="playerName">Your name:</label>
@@ -523,6 +576,14 @@
       <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
     </div>
     <p id="betStatus" class="status"></p>
+    <div class="submitted-names-section">
+      <h4>✓ Submitted</h4>
+      <div id="betSubmittedNamesList" class="submitted-names-list"></div>
+    </div>
+    <div class="eject-section">
+      <p>Race started? Force reveal all bets now.</p>
+      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+    </div>
   </div>
 
   <!-- SCREEN: Submitted waiting -->
@@ -536,6 +597,10 @@
     <div class="submitted-names-section">
       <h4>✓ Submitted</h4>
       <div id="submittedNamesList" class="submitted-names-list"></div>
+    </div>
+    <div class="eject-section">
+      <p>Race started? Force reveal all bets now.</p>
+      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
   </div>
 
@@ -569,6 +634,18 @@
     </div>
   </div>
 
+  <!-- EJECT CONFIRM MODAL -->
+  <div id="ejectModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>⏏ Eject Race?</h3>
+      <p>This will reveal all bets now. Players who haven't submitted will show as "No bet" with $0 total.</p>
+      <div class="modal-buttons">
+        <button class="btn-secondary" onclick="closeEjectModal()">Cancel</button>
+        <button class="btn-danger" onclick="confirmEject()">Eject Now</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
@@ -584,6 +661,7 @@
     // =====================================================
     
     function calculateBetTotal(betText) {
+      if (!betText || betText === '(No bet submitted)') return 0;
       const lines = betText.split('\n');
       let total = 0;
       
@@ -815,6 +893,27 @@ function parseBetLine(line) {
       socket.emit('newRound');
     }
 
+    // =====================================================
+    // EJECT FUNCTIONS
+    // =====================================================
+
+    function showEjectModal() {
+      document.getElementById('ejectModal').classList.remove('hidden');
+    }
+
+    function closeEjectModal() {
+      document.getElementById('ejectModal').classList.add('hidden');
+    }
+
+    function confirmEject() {
+      closeEjectModal();
+      socket.emit('ejectRace');
+    }
+
+    // =====================================================
+    // PASSWORD MODAL FUNCTIONS
+    // =====================================================
+
     function showPasswordModal() {
       document.getElementById('modalPassword').value = '';
       document.getElementById('modalError').textContent = '';
@@ -878,16 +977,17 @@ function parseBetLine(line) {
       URL.revokeObjectURL(url);
     }
 
-    function renderCards(bets) {
+    function renderCards(bets, ejectedPlayers = []) {
       const container = document.getElementById('cardsContainer');
       container.innerHTML = '';
       for (const [player, bet] of Object.entries(bets)) {
+        const isEjected = ejectedPlayers.includes(player);
         const total = calculateBetTotal(bet);
         const card = document.createElement('div');
-        card.className = 'bet-card';
+        card.className = 'bet-card' + (isEjected ? ' ejected' : '');
         card.innerHTML = `
           <div class="player-name">${escHtml(player)}</div>
-          <div class="bet-content">${escHtml(bet)}</div>
+          <div class="bet-content">${isEjected ? '(No bet submitted)' : escHtml(bet)}</div>
           <div class="bet-total">Total: $${total}</div>
         `;
         container.appendChild(card);
@@ -904,13 +1004,15 @@ function parseBetLine(line) {
       let html = '<h3>📋 Previous Races</h3>';
       for (let i = 0; i < history.length - 1; i++) {
         const round = history[i];
+        const ejectedPlayers = round.ejectedPlayers || [];
         html += '<div class="history-round">';
         html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
         for (const [player, bet] of Object.entries(round.bets)) {
+          const isEjected = ejectedPlayers.includes(player);
           const total = calculateBetTotal(bet);
-          html += '<div class="history-bet">';
+          html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
           html += '<div class="h-name">' + escHtml(player) + '</div>';
-          html += '<div class="h-content">' + escHtml(bet) + '</div>';
+          html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(bet)) + '</div>';
           html += '<div class="h-total">Total: $' + total + '</div>';
           html += '</div>';
         }
@@ -919,8 +1021,8 @@ function parseBetLine(line) {
       container.innerHTML = html;
     }
 
-    function renderSubmittedNames(names) {
-      const container = document.getElementById('submittedNamesList');
+    function renderSubmittedNames(names, containerId) {
+      const container = document.getElementById(containerId);
       container.innerHTML = '';
       for (const name of names) {
         const tag = document.createElement('span');
@@ -945,14 +1047,14 @@ function parseBetLine(line) {
         currentRaceName = data.raceName;
         currentBets = data.bets;
         document.getElementById('revealRaceTitle').textContent = data.raceName;
-        renderCards(data.bets);
+        renderCards(data.bets, data.ejectedPlayers || []);
         renderHistory(data.history);
         show('revealScreen');
       } else if (data.gameStarted && data.raceName) {
         currentRaceName = data.raceName;
         document.getElementById('raceTitle').textContent = data.raceName;
         document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
-        renderSubmittedNames(submittedNames);
+        renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
         show('betScreen');
       } else if (data.gameStarted) {
         document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
@@ -981,7 +1083,8 @@ function parseBetLine(line) {
       document.getElementById('betTotalDisplay').textContent = 'Total: $0';
       document.getElementById('betErrorsContainer').innerHTML = '';
       document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
-      renderSubmittedNames([]);
+      renderSubmittedNames([], 'betSubmittedNamesList');
+      renderSubmittedNames([], 'submittedNamesList');
       show('betScreen');
     });
 
@@ -989,7 +1092,8 @@ function parseBetLine(line) {
       submittedNames = data.submittedNames || [];
       document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
       document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
-      renderSubmittedNames(submittedNames);
+      renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
+      renderSubmittedNames(submittedNames, 'submittedNamesList');
     });
 
     socket.on('reveal', (data) => {
@@ -997,7 +1101,7 @@ function parseBetLine(line) {
       currentBets = data.bets;
       fullHistory = data.history || [];
       document.getElementById('revealRaceTitle').textContent = data.raceName;
-      renderCards(data.bets);
+      renderCards(data.bets, data.ejectedPlayers || []);
       renderHistory(data.history);
       show('revealScreen');
     });
