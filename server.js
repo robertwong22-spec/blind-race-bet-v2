@@ -69,6 +69,36 @@ io.on('connection', (socket) => {
     }
   });
 
+  // New: Eject race handler
+  socket.on('ejectRace', () => {
+    if (gameState.revealed || !gameState.raceName) return;
+    
+    // Find players who haven't submitted - create placeholder entries
+    const submittedCount = Object.keys(gameState.bets).length;
+    const ejectedPlayers = [];
+    
+    for (let i = submittedCount + 1; i <= gameState.target; i++) {
+      const ejectedName = `Player ${i} (not submitted)`;
+      gameState.bets[ejectedName] = '(No bet submitted)';
+      ejectedPlayers.push(ejectedName);
+    }
+    
+    gameState.revealed = true;
+    
+    gameState.history.push({
+      raceName: gameState.raceName,
+      bets: { ...gameState.bets },
+      ejectedPlayers: ejectedPlayers
+    });
+    
+    io.emit('reveal', {
+      raceName: gameState.raceName,
+      bets: gameState.bets,
+      history: gameState.history,
+      ejectedPlayers: ejectedPlayers
+    });
+  });
+
   socket.on('newRound', () => {
     gameState.raceCounter++;
     gameState.raceName = '';
