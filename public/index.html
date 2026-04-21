@@ -681,51 +681,6 @@
   let submittedNamesWithTimes = [];
 
   // =====================================================
-  // BET CALCULATOR (keep all these functions as they are)
-  // =====================================================
-  
-  function calculateBetTotal(betText) {
-    if (!betText || betText === '(No bet submitted)') return 0;
-    const lines = betText.split('\n');
-    let total = 0;
-    
-    for (const line of lines) {
-      const result = parseBetLine(line);
-      total += result.amount;
-    }
-    
-    return total;
-  }
-  
-  // ... keep all the bet calculation functions (parseBetLine, countUniqueHorses, etc.)
-  // ... they should remain exactly as you have them
-  
-  function updateBetTotal() {
-    const betText = document.getElementById('betInput').value;
-    const result = calculateBetWithErrors(betText);
-    
-    document.getElementById('betTotalDisplay').textContent = 'Total: $' + result.total;
-    
-    const errorsContainer = document.getElementById('betErrorsContainer');
-    if (result.errors.length > 0) {
-      let errorsHtml = '';
-      for (const err of result.errors) {
-        errorsHtml += `
-          <div class="bet-error-item">
-            <span class="error-icon">✗</span>
-            <span class="error-text">Line ${err.lineNumber}: <span class="error-line">${escHtml(err.lineText)}</span> — ${err.error}</span>
-          </div>
-        `;
-      }
-      errorsContainer.innerHTML = errorsHtml;
-    } else {
-      errorsContainer.innerHTML = '';
-    }
-  }
-  
-  document.getElementById('betInput').addEventListener('input', updateBetTotal);
-
-  // =====================================================
   // TIME FUNCTIONS
   // =====================================================
 
@@ -750,6 +705,8 @@
   function renderSubmittedNames(namesWithTimes, containerId) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
+    if (!namesWithTimes || !Array.isArray(namesWithTimes)) return;
+    
     for (const item of namesWithTimes) {
       const tag = document.createElement('span');
       tag.className = 'submitted-name-tag';
@@ -776,20 +733,32 @@
       const ejectedPlayers = round.ejectedPlayers || [];
       html += '<div class="history-round">';
       html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
-      for (const [player, betData] of Object.entries(round.bets)) {
-        const betText = betData.bet;
-        const betTime = betData.time;
-        const isEjected = ejectedPlayers.includes(player);
-        const total = calculateBetTotal(betText);
-        const timeStr = formatTime(betTime);
-        html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
-        html += '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
-        html += '<div class="h-name">' + escHtml(player) + '</div>';
-        html += '<div class="history-time">' + timeStr + '</div>';
-        html += '</div>';
-        html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(betText)) + '</div>';
-        html += '<div class="h-total">Total: $' + total + '</div>';
-        html += '</div>';
+      
+      // Check if bets is an object with bet objects or old format
+      if (round.bets && typeof round.bets === 'object') {
+        for (const [player, betData] of Object.entries(round.bets)) {
+          // Handle both old and new format
+          let betText, betTime;
+          if (typeof betData === 'object' && betData.bet) {
+            betText = betData.bet;
+            betTime = betData.time;
+          } else {
+            betText = betData; // old format
+            betTime = null;
+          }
+          
+          const isEjected = ejectedPlayers.includes(player);
+          const total = calculateBetTotal(betText);
+          const timeStr = formatTime(betTime);
+          html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
+          html += '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
+          html += '<div class="h-name">' + escHtml(player) + '</div>';
+          html += '<div class="history-time">' + timeStr + '</div>';
+          html += '</div>';
+          html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(betText)) + '</div>';
+          html += '<div class="h-total">Total: $' + total + '</div>';
+          html += '</div>';
+        }
       }
       html += '</div>';
     }
@@ -799,9 +768,19 @@
   function renderCards(bets, ejectedPlayers = []) {
     const container = document.getElementById('cardsContainer');
     container.innerHTML = '';
+    if (!bets || typeof bets !== 'object') return;
+    
     for (const [player, betData] of Object.entries(bets)) {
-      const betText = betData.bet;
-      const betTime = betData.time;
+      // Handle both old and new format
+      let betText, betTime;
+      if (typeof betData === 'object' && betData.bet) {
+        betText = betData.bet;
+        betTime = betData.time;
+      } else {
+        betText = betData; // old format
+        betTime = null;
+      }
+      
       const isEjected = ejectedPlayers.includes(player);
       const total = calculateBetTotal(betText);
       const timeStr = formatTime(betTime);
@@ -820,138 +799,31 @@
   }
 
   // =====================================================
-  // BASIC FUNCTIONS
+  // KEEP ALL YOUR EXISTING FUNCTIONS BELOW
   // =====================================================
-
-  function show(id) {
-    ['setupScreen','nameScreen','betScreen','waitingScreen','revealScreen'].forEach(s => {
-      document.getElementById(s).classList.add('hidden');
-    });
-    document.getElementById(id).classList.remove('hidden');
-  }
-
-  function startDay() {
-    const num = document.getElementById('numPlayers').value;
-    socket.emit('setPlayers', num);
-  }
-
-  function submitRaceName() {
-    const name = document.getElementById('raceName').value.trim();
-    if (!name) return;
-    socket.emit('setRaceName', name);
-  }
-
-  function submitBet() {
-    const name = document.getElementById('playerName').value.trim();
-    const bet = document.getElementById('betInput').value.trim();
-    if (!name || !bet) return;
-    socket.emit('placeBet', { name, bet });
-    hasSubmitted = true;
-    document.getElementById('waitRaceTitle').textContent = document.getElementById('raceTitle').textContent;
-    show('waitingScreen');
-  }
-
-  function nextRound() {
-    hasSubmitted = false;
-    socket.emit('newRound');
-  }
-
-  function showEjectModal() {
-    document.getElementById('ejectModal').classList.remove('hidden');
-  }
-
-  function closeEjectModal() {
-    document.getElementById('ejectModal').classList.add('hidden');
-  }
-
-  function confirmEject() {
-    closeEjectModal();
-    socket.emit('ejectRace');
-  }
-
-  function showPasswordModal() {
-    document.getElementById('modalPassword').value = '';
-    document.getElementById('modalError').textContent = '';
-    document.getElementById('passwordModal').classList.remove('hidden');
-    document.getElementById('modalPassword').focus();
-  }
-
-  function closePasswordModal() {
-    document.getElementById('passwordModal').classList.add('hidden');
-  }
-
-  function confirmNewDay() {
-    const pw = document.getElementById('modalPassword').value;
-    if (!pw) {
-      document.getElementById('modalError').textContent = 'Please enter a password.';
-      return;
-    }
-    socket.emit('newRacingDay', pw);
-  }
-
-  document.getElementById('modalPassword').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') confirmNewDay();
-  });
-
-  function downloadHistory() {
-    let text = '=== BETTING GAME HISTORY ===\n';
-    text += 'Downloaded: ' + new Date().toLocaleString() + '\n';
-    text += '================================\n\n';
-
-    const allRounds = [...fullHistory];
-    if (currentRaceName && Object.keys(currentBets).length > 0) {
-      const lastInHistory = fullHistory[fullHistory.length - 1];
-      const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
-      if (!alreadyIncluded) {
-        allRounds.push({ raceName: currentRaceName, bets: currentBets });
-      }
-    }
-
-    if (allRounds.length === 0) {
-      text += 'No bets recorded yet.\n';
-    } else {
-      allRounds.forEach((round, i) => {
-        text += '--- ' + round.raceName + ' ---\n';
-        for (const [player, betData] of Object.entries(round.bets)) {
-          const betText = betData.bet;
-          const betTime = betData.time;
-          const total = calculateBetTotal(betText);
-          const timeStr = formatTime(betTime);
-          text += '\n' + player + ' (Total: $' + total + ', Time: ' + timeStr + '):\n';
-          text += betText + '\n';
-        }
-        text += '\n';
-      });
-    }
-
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function escHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-
+  
+  // KEEP ALL THESE FUNCTIONS EXACTLY AS THEY ARE:
+  // calculateBetTotal, calculateBetWithErrors, parseBetLine,
+  // countUniqueHorses, calculateQuinellaDash, calculateForecast,
+  // updateBetTotal, show, startDay, submitRaceName, submitBet,
+  // nextRound, showEjectModal, closeEjectModal, confirmEject,
+  // showPasswordModal, closePasswordModal, confirmNewDay,
+  // downloadHistory, escHtml
+  
   // =====================================================
-  // SOCKET EVENTS
+  // SOCKET EVENTS (UPDATED)
   // =====================================================
 
   socket.on('state', (data) => {
+    console.log('State received:', data); // Debug log
+    
     currentRaceCounter = data.raceCounter || 1;
     fullHistory = data.history || [];
     submittedNamesWithTimes = data.submittedNames || [];
+    currentBets = data.bets || {};
+    
     if (data.revealed && data.bets) {
       currentRaceName = data.raceName;
-      currentBets = data.bets;
       document.getElementById('revealRaceTitle').textContent = data.raceName;
       renderCards(data.bets, data.ejectedPlayers || []);
       renderHistory(data.history);
@@ -959,7 +831,7 @@
     } else if (data.gameStarted && data.raceName) {
       currentRaceName = data.raceName;
       document.getElementById('raceTitle').textContent = data.raceName;
-      document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
+      document.getElementById('betStatus').textContent = (data.betCount || 0) + ' / ' + data.target + ' bets placed';
       renderSubmittedNames(submittedNamesWithTimes, 'betSubmittedNamesList');
       show('betScreen');
     } else if (data.gameStarted) {
@@ -995,6 +867,7 @@
   });
 
   socket.on('betUpdate', (data) => {
+    console.log('Bet update received:', data); // Debug log
     submittedNamesWithTimes = data.submittedNames || [];
     document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
     document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
@@ -1003,6 +876,7 @@
   });
 
   socket.on('reveal', (data) => {
+    console.log('Reveal received:', data); // Debug log
     currentRaceName = data.raceName;
     currentBets = data.bets;
     fullHistory = data.history || [];
