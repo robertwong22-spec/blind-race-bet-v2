@@ -84,7 +84,7 @@
       outline: none;
       transition: border 0.2s;
       resize: vertical;
-      min-height: 120px;
+      min-height: 150px;
       font-family: 'Consolas', 'Monaco', monospace;
     }
 
@@ -145,15 +145,16 @@
 
     .btn-eject {
       background: rgba(255,255,255,0.1);
-      color: #aaa;
-      padding: 8px 16px;
-      font-size: 0.85rem;
+      color: #888;
+      padding: 6px 14px;
+      font-size: 0.8rem;
       border: 1px solid rgba(255,255,255,0.15);
+      margin: 0;
     }
 
     .btn-eject:hover {
       background: rgba(255,255,255,0.2);
-      color: #fff;
+      color: #ccc;
     }
 
     .btn-newrace {
@@ -187,7 +188,7 @@
     .status {
       text-align: center;
       font-size: 1.1rem;
-      padding: 12px 0;
+      padding: 16px;
       color: #aee;
     }
 
@@ -368,7 +369,7 @@
       text-align: center;
       color: #7bed9f;
       font-size: 1.1rem;
-      padding: 16px 0;
+      padding: 20px;
     }
 
     .submitted-msg .check {
@@ -378,8 +379,8 @@
     }
 
     .submitted-names-section {
-      margin-top: 12px;
-      padding: 12px 16px;
+      margin-top: 10px;
+      padding: 10px 14px;
       background: rgba(255,255,255,0.08);
       border-radius: 10px;
     }
@@ -388,17 +389,17 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .submitted-names-header h4 {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: #ffd700;
       margin: 0;
     }
 
     .submitted-names-header .bet-count {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #aee;
       font-weight: 600;
     }
@@ -412,18 +413,18 @@
     .submitted-name-tag {
       background: linear-gradient(135deg, #2ecc71, #27ae60);
       color: #fff;
-      padding: 6px 14px;
+      padding: 5px 12px;
       border-radius: 20px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       animation: tagIn 0.3s ease-out both;
     }
 
     .submitted-name-tag .tag-check {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
     }
 
     @keyframes tagIn {
@@ -438,16 +439,8 @@
     }
 
     .eject-section {
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      text-align: center;
-    }
-
-    .eject-section p {
-      font-size: 0.8rem;
-      color: #777;
-      margin-bottom: 8px;
+      margin-top: 16px;
+      text-align: right;
     }
 
     .modal-overlay {
@@ -512,13 +505,14 @@
       box-shadow: 0 4px 15px rgba(255,215,0,0.3);
     }
 
-    .bet-input-wrapper {
+    .bet-actions-row {
       display: flex;
-      justify-content: center;
-      margin-bottom: 8px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
     }
 
-    .bet-input-wrapper button {
+    .bet-actions-row button {
       margin: 0;
     }
 
@@ -553,40 +547,6 @@
       font-family: 'Consolas', 'Monaco', monospace;
       word-break: break-all;
     }
-
-    .input-row {
-      display: flex;
-      gap: 12px;
-      align-items: flex-end;
-      margin-bottom: 10px;
-    }
-
-    .input-row .name-field {
-      flex: 0 0 auto;
-      width: 140px;
-    }
-
-    .input-row .name-field label {
-      margin-bottom: 4px;
-    }
-
-    .input-row .name-field input {
-      margin-bottom: 0;
-      width: 100%;
-    }
-
-    .input-row .bet-field {
-      flex: 1;
-    }
-
-    .input-row .bet-field label {
-      margin-bottom: 4px;
-    }
-
-    .input-row .bet-field textarea {
-      margin-bottom: 0;
-      min-height: 80px;
-    }
   </style>
 </head>
 <body>
@@ -611,20 +571,15 @@
   <!-- SCREEN: Place bet -->
   <div id="betScreen" class="container hidden">
     <h2 id="raceTitle">Race</h2>
-    <div class="input-row">
-      <div class="name-field">
-        <label for="playerName">Your name</label>
-        <input type="text" id="playerName" />
-      </div>
-      <div class="bet-field">
-        <label for="betInput">Your bet</label>
-        <textarea id="betInput"></textarea>
-      </div>
-    </div>
+    <label for="playerName">Your name:</label>
+    <input type="text" id="playerName" />
+    <label for="betInput">Your bet:</label>
+    <textarea id="betInput"></textarea>
     <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
     <div id="betErrorsContainer" class="bet-errors"></div>
-    <div class="bet-input-wrapper">
+    <div class="bet-actions-row">
       <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
+      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
     <div class="submitted-names-section">
       <div class="submitted-names-header">
@@ -632,10 +587,6 @@
         <span id="betStatus" class="bet-count">0 / 3</span>
       </div>
       <div id="betSubmittedNamesList" class="submitted-names-list"></div>
-    </div>
-    <div class="eject-section">
-      <p>Race started? Force reveal all bets</p>
-      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
   </div>
 
@@ -654,7 +605,6 @@
       <div id="submittedNamesList" class="submitted-names-list"></div>
     </div>
     <div class="eject-section">
-      <p>Race started? Force reveal all bets</p>
       <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
   </div>
