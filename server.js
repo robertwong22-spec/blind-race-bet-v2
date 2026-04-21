@@ -18,7 +18,7 @@ let gameState = {
   target: 3,
   raceCounter: 1,
   raceName: '',
-  bets: {},
+  bets: {}, // Now will store {bet: '1W10', time: '2024-01-01T10:30:00Z'}
   revealed: false,
   history: [],
   ejectedPlayers: []
@@ -28,10 +28,15 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 io.on('connection', (socket) => {
   // Send current state to new connections
+  const submittedNames = Object.keys(gameState.bets).map(name => ({
+    name,
+    time: gameState.bets[name].time
+  }));
+  
   socket.emit('state', {
     ...gameState,
     betCount: Object.keys(gameState.bets).length,
-    submittedNames: Object.keys(gameState.bets)
+    submittedNames: submittedNames
   });
 
   socket.on('setPlayers', (num) => {
@@ -53,9 +58,19 @@ io.on('connection', (socket) => {
 
   socket.on('placeBet', ({ name, bet }) => {
     if (gameState.revealed) return;
-    gameState.bets[name] = bet;
+    
+    // Store bet with timestamp
+    gameState.bets[name] = {
+      bet: bet,
+      time: new Date().toISOString()
+    };
+    
     const count = Object.keys(gameState.bets).length;
-    const submittedNames = Object.keys(gameState.bets);
+    const submittedNames = Object.keys(gameState.bets).map(playerName => ({
+      name: playerName,
+      time: gameState.bets[playerName].time
+    }));
+    
     io.emit('betUpdate', { count, target: gameState.target, submittedNames });
     
     if (count >= gameState.target) {
@@ -82,10 +97,12 @@ io.on('connection', (socket) => {
     const ejectedPlayers = [];
     
     // Create placeholder entries for non-submitted players
-    // We'll mark them with a special value
     for (let i = submittedPlayers.length + 1; i <= gameState.target; i++) {
       const ejectedName = `Player ${i} (not submitted)`;
-      gameState.bets[ejectedName] = '(No bet submitted)';
+      gameState.bets[ejectedName] = {
+        bet: '(No bet submitted)',
+        time: new Date().toISOString() // Time when ejected
+      };
       ejectedPlayers.push(ejectedName);
     }
     
