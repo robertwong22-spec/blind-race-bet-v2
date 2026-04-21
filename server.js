@@ -18,7 +18,7 @@ let gameState = {
   target: 3,
   raceCounter: 1,
   raceName: '',
-  bets: {}, // Now will store {bet: '1W10', time: '2024-01-01T10:30:00Z'}
+  bets: {}, // Will store objects: {bet: '1W10', time: 'ISO string'}
   revealed: false,
   history: [],
   ejectedPlayers: []
@@ -29,14 +29,21 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 io.on('connection', (socket) => {
   // Send current state to new connections
   const submittedNames = Object.keys(gameState.bets).map(name => ({
-    name,
+    name: name,
     time: gameState.bets[name].time
   }));
   
   socket.emit('state', {
-    ...gameState,
+    gameStarted: gameState.gameStarted,
+    target: gameState.target,
+    raceCounter: gameState.raceCounter,
+    raceName: gameState.raceName,
+    bets: gameState.bets,
+    revealed: gameState.revealed,
+    history: gameState.history,
     betCount: Object.keys(gameState.bets).length,
-    submittedNames: submittedNames
+    submittedNames: submittedNames,
+    ejectedPlayers: gameState.ejectedPlayers
   });
 
   socket.on('setPlayers', (num) => {
@@ -71,7 +78,11 @@ io.on('connection', (socket) => {
       time: gameState.bets[playerName].time
     }));
     
-    io.emit('betUpdate', { count, target: gameState.target, submittedNames });
+    io.emit('betUpdate', { 
+      count: count, 
+      target: gameState.target, 
+      submittedNames: submittedNames 
+    });
     
     if (count >= gameState.target) {
       gameState.revealed = true;
@@ -114,9 +125,6 @@ io.on('connection', (socket) => {
       bets: { ...gameState.bets },
       ejectedPlayers: ejectedPlayers
     });
-    
-    // Notify all clients that the race was ejected
-    io.emit('raceEjected', { ejectedPlayers });
     
     io.emit('reveal', {
       raceName: gameState.raceName,
