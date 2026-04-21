@@ -4,595 +4,590 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Betting Game</title>
-<style>
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    min-height: 100vh;
-    padding: 20px;
-    color: #fff;
-  }
-
-  .container {
-    max-width: 500px;
-    margin: 0 auto;
-  }
-
-  .header {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 20px;
-  }
-
-  .header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #ffd700, #ffaa00);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .logo {
-    font-size: 2.5rem;
-  }
-
-  .round-indicator {
-    background: linear-gradient(135deg, #00b4db, #0083b0);
-    color: #fff;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    display: inline-block;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 15px rgba(0, 180, 219, 0.3);
-  }
-
-  .betting-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 30px;
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-  }
-
-  .form-group {
-    margin-bottom: 25px;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #a0a0a0;
-    font-size: 0.95rem;
-  }
-
-  .name-input-container {
-    position: relative;
-    width: fit-content;
-  }
-
-  .name-input {
-    padding: 14px 20px;
-    padding-right: 45px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    font-size: 1rem;
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-    transition: all 0.3s ease;
-    width: auto;
-    min-width: 150px;
-  }
-
-  .name-input:focus {
-    outline: none;
-    border-color: #ffd700;
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-  }
-
-  .name-input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-  }
-
-  .name-input:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-
-  .edit-btn {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #ffd700;
-    cursor: pointer;
-    font-size: 1.1rem;
-    padding: 5px;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-  }
-
-  .edit-btn:hover {
-    opacity: 1;
-  }
-
-  .bet-input {
-    width: 100%;
-    padding: 18px 22px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    font-size: 1rem;
-    background: rgba(255, 255, 255, 0.95);
-    color: #1a1a2e;
-    min-height: 120px;
-    resize: vertical;
-    transition: all 0.3s ease;
-  }
-
-  .bet-input:focus {
-    outline: none;
-    border-color: #ffd700;
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
-  }
-
-  .bet-input::placeholder {
-    color: rgba(0, 0, 0, 0.4);
-  }
-
-  .bet-submit-row {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 14px;
-  }
-
-  .bet-submit-row button {
-    margin: 0;
-  }
-
-  .bet-total-inline {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    padding: 14px 32px;
-    border-radius: 10px;
-    font-size: 1.2rem;
-    font-weight: 700;
-    text-align: center;
-  }
-
-  .bet-status-row {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    margin-bottom: 16px;
-    font-size: 1rem;
-    color: #aee;
-  }
-
-  .status-separator {
-    color: #666;
-  }
-
-  .submitted-label {
-    color: #ffd700;
-    font-weight: 600;
-  }
-
-  .submitted-names-inline {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .submitted-name-tag-small {
-    background: linear-gradient(135deg, #2ecc71, #27ae60);
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .submit-btn {
-    background: linear-gradient(135deg, #ffd700, #ffaa00);
-    color: #1a1a2e;
-    border: none;
-    padding: 16px 35px;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
-  }
-
-  .submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 35px rgba(255, 215, 0, 0.4);
-  }
-
-  .submit-btn:active {
-    transform: translateY(0);
-  }
-
-  .submit-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .status-section {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .status-title {
-    font-size: 0.95rem;
-    color: #888;
-    margin-bottom: 10px;
-  }
-
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-
-  .status-badge.pending {
-    background: rgba(255, 193, 7, 0.15);
-    color: #ffc107;
-    border: 1px solid rgba(255, 193, 7, 0.3);
-  }
-
-  .status-badge.submitted {
-    background: rgba(46, 204, 113, 0.15);
-    color: #2ecc71;
-    border: 1px solid rgba(46, 204, 113, 0.3);
-  }
-
-  .submitted-by-section {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .submitted-by-title {
-    font-size: 0.95rem;
-    color: #888;
-    margin-bottom: 12px;
-  }
-
-  .submitted-users {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .user-tag {
-    background: linear-gradient(135deg, #2ecc71, #27ae60);
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 15px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    box-shadow: 0 3px 10px rgba(46, 204, 113, 0.3);
-  }
-
-  .no-submissions {
-    color: #666;
-    font-style: italic;
-    font-size: 0.9rem;
-  }
-
-  .footer {
-    text-align: center;
-    margin-top: 30px;
-    padding: 20px;
-    color: #666;
-    font-size: 0.85rem;
-  }
-
-  .pulse {
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.6;
-    }
-  }
-
-  .confetti {
-    position: fixed;
-    pointer-events: none;
-    z-index: 1000;
-  }
-
-  /* Past Bets Section */
-  .past-bets-section {
-    margin-top: 30px;
-  }
-
-  .past-bets-toggle {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    padding: 16px 24px;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-  }
-
-  .past-bets-toggle:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 215, 0, 0.3);
-  }
-
-  .toggle-icon {
-    font-size: 1.2rem;
-    transition: transform 0.3s ease;
-  }
-
-  .toggle-icon.open {
-    transform: rotate(180deg);
-  }
-
-  .past-bets-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease, padding 0.4s ease;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 0 0 16px 16px;
-    margin-top: -10px;
-  }
-
-  .past-bets-content.open {
-    max-height: 2000px;
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-top: none;
-  }
-
-  .past-round {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 15px;
-  }
-
-  .past-round:last-child {
-    margin-bottom: 0;
-  }
-
-  .past-round-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .past-round-title {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #ffd700;
-  }
-
-  .past-round-date {
-    font-size: 0.8rem;
-    color: #888;
-  }
-
-  .past-bet-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  .past-bet-item:last-child {
-    border-bottom: none;
-  }
-
-  .past-bet-user {
-    font-weight: 600;
-    color: #4fc3f7;
-    min-width: 80px;
-  }
-
-  .past-bet-text {
-    flex: 1;
-    margin-left: 15px;
-    color: #ccc;
-    font-size: 0.95rem;
-    line-height: 1.4;
-  }
-
-  .past-bet-amount {
-    font-weight: 700;
-    color: #2ecc71;
-    margin-left: 15px;
-    white-space: nowrap;
-  }
-
-  .no-past-bets {
-    text-align: center;
-    color: #666;
-    font-style: italic;
-    padding: 20px;
-  }
-
-  /* Admin Section */
-  .admin-section {
-    margin-top: 20px;
-  }
-
-  .admin-toggle {
-    width: 100%;
-    background: rgba(231, 76, 60, 0.1);
-    border: 1px solid rgba(231, 76, 60, 0.3);
-    border-radius: 16px;
-    padding: 16px 24px;
-    color: #e74c3c;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-  }
-
-  .admin-toggle:hover {
-    background: rgba(231, 76, 60, 0.15);
-    border-color: rgba(231, 76, 60, 0.5);
-  }
-
-  .admin-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease, padding 0.4s ease;
-    background: rgba(231, 76, 60, 0.05);
-    border-radius: 0 0 16px 16px;
-    margin-top: -10px;
-  }
-
-  .admin-content.open {
-    max-height: 500px;
-    padding: 20px;
-    border: 1px solid rgba(231, 76, 60, 0.2);
-    border-top: none;
-  }
-
-  .admin-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .admin-btn {
-    padding: 14px 24px;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-
-  .admin-btn.next-round {
-    background: linear-gradient(135deg, #3498db, #2980b9);
-    color: #fff;
-  }
-
-  .admin-btn.next-round:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
-  }
-
-  .admin-btn.reset {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: #fff;
-  }
-
-  .admin-btn.reset:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
-  }
-
-  .admin-btn.export {
-    background: linear-gradient(135deg, #9b59b6, #8e44ad);
-    color: #fff;
-  }
-
-  .admin-btn.export:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(155, 89, 182, 0.4);
-  }
-
-  .admin-warning {
-    margin-top: 15px;
-    padding: 12px;
-    background: rgba(241, 196, 15, 0.1);
-    border: 1px solid rgba(241, 196, 15, 0.3);
-    border-radius: 8px;
-    color: #f1c40f;
-    font-size: 0.85rem;
-    text-align: center;
-  }
-
-  @media (max-width: 480px) {
-    .header h1 {
-      font-size: 1.8rem;
-    }
-
-    .betting-card {
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 20px;
     }
 
-    .bet-input {
-      min-height: 100px;
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      text-align: center;
     }
 
-    .past-bet-item {
+    h2 {
+      font-size: 1.3rem;
+      color: #ffd700;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 28px;
+      backdrop-filter: blur(10px);
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      color: #ccc;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="password"] {
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #ffffff;
+      color: #222;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border 0.2s;
+      width: 100%;
+    }
+
+    input:focus {
+      border-color: #ffd700;
+    }
+
+    #playerName {
+      width: 25%;
+      min-width: 120px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #ffffff;
+      color: #222;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      outline: none;
+      transition: border 0.2s;
+      resize: vertical;
+      min-height: 120px;
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+
+    textarea:focus {
+      border-color: #ffd700;
+    }
+
+    textarea::placeholder,
+    input::placeholder {
+      color: rgba(0,0,0,0.35);
+    }
+
+    button {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ffd700, #ffaa00);
+      color: #1a1a2e;
+      box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(255,215,0,0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.25);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(231,76,60,0.3);
+    }
+
+    .btn-danger:hover {
+      box-shadow: 0 6px 20px rgba(231,76,60,0.5);
+    }
+
+    .btn-eject {
+      background: rgba(255,255,255,0.1);
+      color: #aaa;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .btn-eject:hover {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+
+    .btn-newrace {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: #fff;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      box-shadow: 0 2px 8px rgba(231,76,60,0.3);
+      margin-right: 0;
+      margin-bottom: 0;
+    }
+
+    .btn-newrace:hover {
+      box-shadow: 0 4px 12px rgba(231,76,60,0.5);
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: #fff;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      box-shadow: 0 2px 8px rgba(46,204,113,0.3);
+      margin-right: 0;
+      margin-bottom: 0;
+    }
+
+    .btn-download:hover {
+      box-shadow: 0 4px 12px rgba(46,204,113,0.5);
+    }
+
+    .status {
+      text-align: center;
+      font-size: 1.1rem;
+      padding: 12px 0;
+      color: #aee;
+    }
+
+    .waiting-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .bet-card {
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 18px;
+      animation: cardIn 0.4s ease-out both;
+    }
+
+    .bet-card.ejected {
+      background: #f8f8f8;
+      border: 2px dashed #ccc;
+    }
+
+    .bet-card.ejected .player-name {
+      color: #999;
+    }
+
+    .bet-card.ejected .bet-content {
+      color: #999;
+      font-style: italic;
+    }
+
+    .bet-card:nth-child(1) { animation-delay: 0s; }
+    .bet-card:nth-child(2) { animation-delay: 0.1s; }
+    .bet-card:nth-child(3) { animation-delay: 0.2s; }
+    .bet-card:nth-child(4) { animation-delay: 0.3s; }
+    .bet-card:nth-child(5) { animation-delay: 0.4s; }
+    .bet-card:nth-child(6) { animation-delay: 0.5s; }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .bet-card .player-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #b8860b;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e0d5b0;
+    }
+
+    .bet-card .bet-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #333;
+    }
+
+    .bet-card .bet-total {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #e0d5b0;
+      font-weight: 700;
+      color: #2c5364;
+      font-size: 1rem;
+    }
+
+    .reveal-buttons {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-top: 24px;
+    }
+
+    .reveal-buttons-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .reveal-buttons-right {
+      display: flex;
       flex-direction: column;
-      gap: 5px;
+      align-items: flex-end;
+      gap: 6px;
     }
 
-    .past-bet-text {
-      margin-left: 0;
+    .history-section {
+      margin-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      padding-top: 20px;
     }
 
-    .past-bet-amount {
-      margin-left: 0;
+    .history-section h3 {
+      font-size: 1.1rem;
+      color: #ffd700;
+      margin-bottom: 12px;
     }
-  }
-</style>
+
+    .history-round {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .history-round .round-title {
+      font-weight: 600;
+      color: #2c5364;
+      margin-bottom: 8px;
+    }
+
+    .history-bet {
+      margin-bottom: 8px;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+
+    .history-bet.ejected {
+      background: #f0f0f0;
+      border: 1px dashed #ccc;
+    }
+
+    .history-bet .h-name {
+      font-weight: 600;
+      color: #b8860b;
+      margin-bottom: 4px;
+    }
+
+    .history-bet.ejected .h-name {
+      color: #999;
+    }
+
+    .history-bet .h-content {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.9rem;
+      color: #444;
+      line-height: 1.4;
+    }
+
+    .history-bet.ejected .h-content {
+      color: #999;
+      font-style: italic;
+    }
+
+    .history-bet .h-total {
+      margin-top: 6px;
+      font-weight: 600;
+      color: #2c5364;
+      font-size: 0.9rem;
+    }
+
+    .hidden { display: none !important; }
+
+    .submitted-msg {
+      text-align: center;
+      color: #7bed9f;
+      font-size: 1.1rem;
+      padding: 16px 0;
+    }
+
+    .submitted-msg .check {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .submitted-names-section {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+    }
+
+    .submitted-names-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .submitted-names-header h4 {
+      font-size: 0.95rem;
+      color: #ffd700;
+      margin: 0;
+    }
+
+    .submitted-names-header .bet-count {
+      font-size: 0.9rem;
+      color: #aee;
+      font-weight: 600;
+    }
+
+    .submitted-names-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .submitted-name-tag {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: tagIn 0.3s ease-out both;
+    }
+
+    .submitted-name-tag .tag-check {
+      font-size: 0.8rem;
+    }
+
+    @keyframes tagIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .eject-section {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+    }
+
+    .eject-section p {
+      font-size: 0.8rem;
+      color: #777;
+      margin-bottom: 8px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-box {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 28px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .modal-box h3 {
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+      color: #ffd700;
+    }
+
+    .modal-box p {
+      font-size: 0.9rem;
+      color: #aaa;
+      margin-bottom: 16px;
+    }
+
+    .modal-box input[type="password"] {
+      width: 100%;
+    }
+
+    .modal-error {
+      color: #e74c3c;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      min-height: 1.2em;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .bet-total-display {
+      background: linear-gradient(135deg, #ffd700, #ffaa00);
+      color: #1a1a2e;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+    }
+
+    .bet-input-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .bet-input-wrapper button {
+      margin: 0;
+    }
+
+    .bet-errors {
+      margin-bottom: 10px;
+    }
+
+    .bet-error-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid rgba(231, 76, 60, 0.4);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .bet-error-item .error-icon {
+      color: #e74c3c;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .bet-error-item .error-text {
+      color: #ffcccc;
+    }
+
+    .bet-error-item .error-line {
+      color: #ff6b6b;
+      font-family: 'Consolas', 'Monaco', monospace;
+      word-break: break-all;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .input-row .name-field {
+      flex: 0 0 auto;
+      width: 140px;
+    }
+
+    .input-row .name-field label {
+      margin-bottom: 4px;
+    }
+
+    .input-row .name-field input {
+      margin-bottom: 0;
+      width: 100%;
+    }
+
+    .input-row .bet-field {
+      flex: 1;
+    }
+
+    .input-row .bet-field label {
+      margin-bottom: 4px;
+    }
+
+    .input-row .bet-field textarea {
+      margin-bottom: 0;
+      min-height: 80px;
+    }
+  </style>
 </head>
 <body>
 
@@ -613,29 +608,36 @@
     <button class="btn-primary" onclick="submitRaceName()">Open Betting</button>
   </div>
 
-<!-- SCREEN: Place bet -->
-<div id="betScreen" class="container hidden">
-  <h2 id="raceTitle">Race</h2>
-  <label for="playerName">Your name:</label>
-  <input type="text" id="playerName" />
-  <label for="betInput">Your bet:</label>
-  <textarea id="betInput"></textarea>
-  <div id="betErrorsContainer" class="bet-errors"></div>
-  <div class="bet-submit-row">
-    <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
-    <div id="betTotalDisplay" class="bet-total-inline">Total: $0</div>
+  <!-- SCREEN: Place bet -->
+  <div id="betScreen" class="container hidden">
+    <h2 id="raceTitle">Race</h2>
+    <div class="input-row">
+      <div class="name-field">
+        <label for="playerName">Your name</label>
+        <input type="text" id="playerName" />
+      </div>
+      <div class="bet-field">
+        <label for="betInput">Your bet</label>
+        <textarea id="betInput"></textarea>
+      </div>
+    </div>
+    <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
+    <div id="betErrorsContainer" class="bet-errors"></div>
+    <div class="bet-input-wrapper">
+      <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
+    </div>
+    <div class="submitted-names-section">
+      <div class="submitted-names-header">
+        <h4>✓ Submitted</h4>
+        <span id="betStatus" class="bet-count">0 / 3</span>
+      </div>
+      <div id="betSubmittedNamesList" class="submitted-names-list"></div>
+    </div>
+    <div class="eject-section">
+      <p>Race started? Force reveal all bets</p>
+      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+    </div>
   </div>
-  <div class="bet-status-row">
-    <span id="betStatus">0 / 3 bets placed</span>
-    <span class="status-separator">—</span>
-    <span class="submitted-label">Submitted:</span>
-    <span id="betSubmittedNamesList" class="submitted-names-inline"></span>
-  </div>
-  <div class="eject-section">
-    <p>Race started? Force reveal all bets now.</p>
-    <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
-  </div>
-</div>
 
   <!-- SCREEN: Submitted waiting -->
   <div id="waitingScreen" class="container hidden">
@@ -644,13 +646,15 @@
       <span class="check">✅</span>
       Bet submitted! Waiting for others<span class="waiting-dots"></span>
     </div>
-    <p id="waitStatus" class="status"></p>
     <div class="submitted-names-section">
-      <h4>✓ Submitted</h4>
+      <div class="submitted-names-header">
+        <h4>✓ Submitted</h4>
+        <span id="waitStatus" class="bet-count">0 / 3</span>
+      </div>
       <div id="submittedNamesList" class="submitted-names-list"></div>
     </div>
     <div class="eject-section">
-      <p>Race started? Force reveal all bets now.</p>
+      <p>Race started? Force reveal all bets</p>
       <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
   </div>
@@ -706,6 +710,7 @@
     let currentRaceName = '';
     let currentBets = {};
     let submittedNames = [];
+    let targetPlayers = 3;
 
     // =====================================================
     // BET CALCULATOR
@@ -746,97 +751,86 @@
       return { total, errors };
     }
     
-function parseBetLine(line) {
-  // Remove all spaces
-  let cleaned = line.replace(/\s+/g, '');
-  if (!cleaned) return { amount: 0, error: null };
+    function parseBetLine(line) {
+      let cleaned = line.replace(/\s+/g, '');
+      if (!cleaned) return { amount: 0, error: null };
 
-   // Check for "no bet" input
-  if (cleaned.toLowerCase() === 'n') {
-    return { amount: 0, error: null };
-  }
-  
-  // Check if line ends with dash (incomplete input - user is typing)
-  if (cleaned.endsWith('-')) {
-    return { amount: 0, error: null };
-  }
-  
-  // Horse characters: 0-9, a-l (lowercase only)
-  // Bet types: W, Q, T (case insensitive), F (uppercase only - to distinguish from horse 'f')
-  // Pattern: (horses)(-horses)? (betType)? (amount)?
-  
-  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
-  
-  if (!match) {
-    return { amount: 0, error: 'Invalid format' };
-  }
-  
-  const leftSide = match[1];
-  const rightSide = match[2] || null;
-  let betType = match[3] ? match[3].toUpperCase() : null;
-  const amount = match[4] ? parseInt(match[4], 10) : 10;
-  
-  const hasDash = rightSide !== null;
-  
-  // Default bet type
-  if (!betType) {
-    betType = hasDash ? 'Q' : 'W';
-  }
-  
-  let combinations = 0;
-  
-  switch (betType) {
-    case 'W':
-      if (hasDash) {
-        return { amount: 0, error: 'Win bet does not allow a dash' };
+      if (cleaned.toLowerCase() === 'n') {
+        return { amount: 0, error: null };
       }
-      combinations = countUniqueHorses(leftSide);
-      break;
-    case 'Q':
-      if (hasDash) {
-        combinations = calculateQuinellaDash(leftSide, rightSide);
-      } else {
-        const n = countUniqueHorses(leftSide);
-        if (n < 2) {
-          return { amount: 0, error: 'Quinella needs at least 2 horses' };
-        }
-        combinations = (n * (n - 1)) / 2;
+      
+      if (cleaned.endsWith('-')) {
+        return { amount: 0, error: null };
       }
-      break;
-    case 'F':
-      if (hasDash) {
-        combinations = calculateForecast(leftSide, rightSide);
+      
+      const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
+      
+      if (!match) {
+        return { amount: 0, error: 'Invalid format' };
       }
-      break;
- case 'T':
-      if (hasDash) {
-        const leftCount = countUniqueHorses(leftSide);
-        const rightCount = countUniqueHorses(rightSide);
-        
-        // Check for duplicates between sides
-        const leftHorses = new Set(leftSide.split(''));
-        const rightHorses = new Set(rightSide.split(''));
-        for (const horse of leftHorses) {
-          if (rightHorses.has(horse)) {
-            return { amount: 0, error: 'Trio cannot have same horse on both sides' };
+      
+      const leftSide = match[1];
+      const rightSide = match[2] || null;
+      let betType = match[3] ? match[3].toUpperCase() : null;
+      const amount = match[4] ? parseInt(match[4], 10) : 10;
+      
+      const hasDash = rightSide !== null;
+      
+      if (!betType) {
+        betType = hasDash ? 'Q' : 'W';
+      }
+      
+      let combinations = 0;
+      
+      switch (betType) {
+        case 'W':
+          if (hasDash) {
+            return { amount: 0, error: 'Win bet does not allow a dash' };
           }
-        }
-        
-        if (leftCount === 1) {
-          // One banker: combinations = n(n-1)/2 where n = right side horses
-          combinations = (rightCount * (rightCount - 1)) / 2;
-        } else if (leftCount === 2) {
-          // Two bankers: combinations = n where n = right side horses
-          combinations = rightCount;
-        } else {
-          return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
-        }
+          combinations = countUniqueHorses(leftSide);
+          break;
+        case 'Q':
+          if (hasDash) {
+            combinations = calculateQuinellaDash(leftSide, rightSide);
+          } else {
+            const n = countUniqueHorses(leftSide);
+            if (n < 2) {
+              return { amount: 0, error: 'Quinella needs at least 2 horses' };
+            }
+            combinations = (n * (n - 1)) / 2;
+          }
+          break;
+        case 'F':
+          if (hasDash) {
+            combinations = calculateForecast(leftSide, rightSide);
+          }
+          break;
+        case 'T':
+          if (hasDash) {
+            const leftCount = countUniqueHorses(leftSide);
+            const rightCount = countUniqueHorses(rightSide);
+            
+            const leftHorses = new Set(leftSide.split(''));
+            const rightHorses = new Set(rightSide.split(''));
+            for (const horse of leftHorses) {
+              if (rightHorses.has(horse)) {
+                return { amount: 0, error: 'Trio cannot have same horse on both sides' };
+              }
+            }
+            
+            if (leftCount === 1) {
+              combinations = (rightCount * (rightCount - 1)) / 2;
+            } else if (leftCount === 2) {
+              combinations = rightCount;
+            } else {
+              return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
+            }
+          }
+          break;
       }
-      break;
-  }
-  
-  return { amount: combinations * amount, error: null };
-}
+      
+      return { amount: combinations * amount, error: null };
+    }
     
     function countUniqueHorses(str) {
       const horses = new Set(str.split(''));
@@ -847,7 +841,6 @@ function parseBetLine(line) {
       const leftHorses = new Set(left.split(''));
       const rightHorses = new Set(right.split(''));
       
-      // Count duplicates (horses appearing on both sides)
       let duplicates = 0;
       for (const horse of leftHorses) {
         if (rightHorses.has(horse)) {
@@ -855,7 +848,6 @@ function parseBetLine(line) {
         }
       }
       
-      // Total combinations: left × right - n(n+1)/2 where n = duplicates
       const rawCombos = leftHorses.size * rightHorses.size;
       const subtract = (duplicates * (duplicates + 1)) / 2;
       
@@ -866,7 +858,6 @@ function parseBetLine(line) {
       const leftHorses = new Set(left.split(''));
       const rightHorses = new Set(right.split(''));
       
-      // Count duplicates
       let duplicates = 0;
       for (const horse of leftHorses) {
         if (rightHorses.has(horse)) {
@@ -874,7 +865,6 @@ function parseBetLine(line) {
         }
       }
       
-      // Total combinations: left × right - n where n = duplicates
       const rawCombos = leftHorses.size * rightHorses.size;
       
       return rawCombos - duplicates;
@@ -886,7 +876,6 @@ function parseBetLine(line) {
       
       document.getElementById('betTotalDisplay').textContent = 'Total: $' + result.total;
       
-      // Display errors
       const errorsContainer = document.getElementById('betErrorsContainer');
       if (result.errors.length > 0) {
         let errorsHtml = '';
@@ -904,7 +893,6 @@ function parseBetLine(line) {
       }
     }
     
-    // Attach event listener to bet input
     document.getElementById('betInput').addEventListener('input', updateBetTotal);
 
     // =====================================================
@@ -1072,25 +1060,22 @@ function parseBetLine(line) {
       container.innerHTML = html;
     }
 
-function renderSubmittedNames(names, containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  
-  // Check if it's the inline version (betScreen) or the waiting screen version
-  const isInline = containerId === 'betSubmittedNamesList';
-  
-  for (const name of names) {
-    const tag = document.createElement('span');
-    tag.className = isInline ? 'submitted-name-tag-small' : 'submitted-name-tag';
-    tag.innerHTML = isInline ? escHtml(name) : `<span class="tag-check">✓</span>${escHtml(name)}`;
-    container.appendChild(tag);
-  }
-  
-  // If no names yet, show placeholder
-  if (names.length === 0 && isInline) {
-    container.innerHTML = '<span style="color: #666; font-style: italic;">none yet</span>';
-  }
-}
+    function renderSubmittedNames(names, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      for (const name of names) {
+        const tag = document.createElement('span');
+        tag.className = 'submitted-name-tag';
+        tag.innerHTML = `<span class="tag-check">✓</span>${escHtml(name)}`;
+        container.appendChild(tag);
+      }
+    }
+
+    function updateStatusText(count, target) {
+      document.getElementById('betStatus').textContent = count + ' / ' + target;
+      document.getElementById('waitStatus').textContent = count + ' / ' + target;
+    }
+
     function escHtml(str) {
       const d = document.createElement('div');
       d.textContent = str;
@@ -1102,6 +1087,7 @@ function renderSubmittedNames(names, containerId) {
       currentRaceCounter = data.raceCounter || 1;
       fullHistory = data.history || [];
       submittedNames = data.submittedNames || [];
+      targetPlayers = data.target || 3;
       if (data.revealed && data.bets) {
         currentRaceName = data.raceName;
         currentBets = data.bets;
@@ -1112,7 +1098,7 @@ function renderSubmittedNames(names, containerId) {
       } else if (data.gameStarted && data.raceName) {
         currentRaceName = data.raceName;
         document.getElementById('raceTitle').textContent = data.raceName;
-        document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
+        updateStatusText(data.betCount, data.target);
         renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
         show('betScreen');
       } else if (data.gameStarted) {
@@ -1136,12 +1122,13 @@ function renderSubmittedNames(names, containerId) {
     socket.on('roundStart', (data) => {
       hasSubmitted = false;
       currentRaceName = data.raceName;
+      targetPlayers = data.target;
       submittedNames = [];
       document.getElementById('raceTitle').textContent = data.raceName;
       document.getElementById('betInput').value = '';
       document.getElementById('betTotalDisplay').textContent = 'Total: $0';
       document.getElementById('betErrorsContainer').innerHTML = '';
-      document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
+      updateStatusText(0, data.target);
       renderSubmittedNames([], 'betSubmittedNamesList');
       renderSubmittedNames([], 'submittedNamesList');
       show('betScreen');
@@ -1149,8 +1136,8 @@ function renderSubmittedNames(names, containerId) {
 
     socket.on('betUpdate', (data) => {
       submittedNames = data.submittedNames || [];
-      document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
-      document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
+      targetPlayers = data.target;
+      updateStatusText(data.count, data.target);
       renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
       renderSubmittedNames(submittedNames, 'submittedNamesList');
     });
