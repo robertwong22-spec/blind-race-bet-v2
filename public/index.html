@@ -681,6 +681,206 @@
   let submittedNamesWithTimes = [];
 
   // =====================================================
+  // BET CALCULATOR
+  // =====================================================
+  
+  function calculateBetTotal(betText) {
+    if (!betText || betText === '(No bet submitted)') return 0;
+    const lines = betText.split('\n');
+    let total = 0;
+    
+    for (const line of lines) {
+      const result = parseBetLine(line);
+      total += result.amount;
+    }
+    
+    return total;
+  }
+  
+  function calculateBetWithErrors(betText) {
+    const lines = betText.split('\n');
+    let total = 0;
+    let errors = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const result = parseBetLine(line);
+      total += result.amount;
+      
+      if (result.error) {
+        errors.push({
+          lineNumber: i + 1,
+          lineText: line,
+          error: result.error
+        });
+      }
+    }
+    
+    return { total, errors };
+  }
+  
+  function parseBetLine(line) {
+    // Remove all spaces
+    let cleaned = line.replace(/\s+/g, '');
+    if (!cleaned) return { amount: 0, error: null };
+
+     // Check for "no bet" input
+    if (cleaned.toLowerCase() === 'n') {
+      return { amount: 0, error: null };
+    }
+    
+    // Check if line ends with dash (incomplete input - user is typing)
+    if (cleaned.endsWith('-')) {
+      return { amount: 0, error: null };
+    }
+    
+    // Horse characters: 0-9, a-l (lowercase only)
+    // Bet types: W, Q, T (case insensitive), F (uppercase only - to distinguish from horse 'f')
+    // Pattern: (horses)(-horses)? (betType)? (amount)?
+    
+    const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
+    
+    if (!match) {
+      return { amount: 0, error: 'Invalid format' };
+    }
+    
+    const leftSide = match[1];
+    const rightSide = match[2] || null;
+    let betType = match[3] ? match[3].toUpperCase() : null;
+    const amount = match[4] ? parseInt(match[4], 10) : 10;
+    
+    const hasDash = rightSide !== null;
+    
+    // Default bet type
+    if (!betType) {
+      betType = hasDash ? 'Q' : 'W';
+    }
+    
+    let combinations = 0;
+    
+    switch (betType) {
+      case 'W':
+        if (hasDash) {
+          return { amount: 0, error: 'Win bet does not allow a dash' };
+        }
+        combinations = countUniqueHorses(leftSide);
+        break;
+      case 'Q':
+        if (hasDash) {
+          combinations = calculateQuinellaDash(leftSide, rightSide);
+        } else {
+          const n = countUniqueHorses(leftSide);
+          if (n < 2) {
+            return { amount: 0, error: 'Quinella needs at least 2 horses' };
+          }
+          combinations = (n * (n - 1)) / 2;
+        }
+        break;
+      case 'F':
+        if (hasDash) {
+          combinations = calculateForecast(leftSide, rightSide);
+        }
+        break;
+      case 'T':
+        if (hasDash) {
+          const leftCount = countUniqueHorses(leftSide);
+          const rightCount = countUniqueHorses(rightSide);
+          
+          // Check for duplicates between sides
+          const leftHorses = new Set(leftSide.split(''));
+          const rightHorses = new Set(rightSide.split(''));
+          for (const horse of leftHorses) {
+            if (rightHorses.has(horse)) {
+              return { amount: 0, error: 'Trio cannot have same horse on both sides' };
+            }
+          }
+          
+          if (leftCount === 1) {
+            // One banker: combinations = n(n-1)/2 where n = right side horses
+            combinations = (rightCount * (rightCount - 1)) / 2;
+          } else if (leftCount === 2) {
+            // Two bankers: combinations = n where n = right side horses
+            combinations = rightCount;
+          } else {
+            return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
+          }
+        }
+        break;
+    }
+    
+    return { amount: combinations * amount, error: null };
+  }
+  
+  function countUniqueHorses(str) {
+    const horses = new Set(str.split(''));
+    return horses.size;
+  }
+  
+  function calculateQuinellaDash(left, right) {
+    const leftHorses = new Set(left.split(''));
+    const rightHorses = new Set(right.split(''));
+    
+    // Count duplicates (horses appearing on both sides)
+    let duplicates = 0;
+    for (const horse of leftHorses) {
+      if (rightHorses.has(horse)) {
+        duplicates++;
+      }
+    }
+    
+    // Total combinations: left × right - n(n+1)/2 where n = duplicates
+    const rawCombos = leftHorses.size * rightHorses.size;
+    const subtract = (duplicates * (duplicates + 1)) / 2;
+    
+    return rawCombos - subtract;
+  }
+  
+  function calculateForecast(left, right) {
+    const leftHorses = new Set(left.split(''));
+    const rightHorses = new Set(right.split(''));
+    
+    // Count duplicates
+    let duplicates = 0;
+    for (const horse of leftHorses) {
+      if (rightHorses.has(horse)) {
+        duplicates++;
+      }
+    }
+    
+    // Total combinations: left × right - n where n = duplicates
+    const rawCombos = leftHorses.size * rightHorses.size;
+    
+    return rawCombos - duplicates;
+  }
+  
+  function updateBetTotal() {
+    const betText = document.getElementById('betInput').value;
+    const result = calculateBetWithErrors(betText);
+    
+    document.getElementById('betTotalDisplay').textContent = 'Total: $' + result.total;
+    
+    // Display errors
+    const errorsContainer = document.getElementById('betErrorsContainer');
+    if (result.errors.length > 0) {
+      let errorsHtml = '';
+      for (const err of result.errors) {
+        errorsHtml += `
+          <div class="bet-error-item">
+            <span class="error-icon">✗</span>
+            <span class="error-text">Line ${err.lineNumber}: <span class="error-line">${escHtml(err.lineText)}</span> — ${err.error}</span>
+          </div>
+        `;
+      }
+      errorsContainer.innerHTML = errorsHtml;
+    } else {
+      errorsContainer.innerHTML = '';
+    }
+  }
+  
+  // Attach event listener to bet input
+  document.getElementById('betInput').addEventListener('input', updateBetTotal);
+
+  // =====================================================
   // TIME FUNCTIONS
   // =====================================================
 
@@ -799,19 +999,144 @@
   }
 
   // =====================================================
-  // KEEP ALL YOUR EXISTING FUNCTIONS BELOW
+  // BASIC FUNCTIONS
   // =====================================================
-  
-  // KEEP ALL THESE FUNCTIONS EXACTLY AS THEY ARE:
-  // calculateBetTotal, calculateBetWithErrors, parseBetLine,
-  // countUniqueHorses, calculateQuinellaDash, calculateForecast,
-  // updateBetTotal, show, startDay, submitRaceName, submitBet,
-  // nextRound, showEjectModal, closeEjectModal, confirmEject,
-  // showPasswordModal, closePasswordModal, confirmNewDay,
-  // downloadHistory, escHtml
-  
+
+  function show(id) {
+    ['setupScreen','nameScreen','betScreen','waitingScreen','revealScreen'].forEach(s => {
+      document.getElementById(s).classList.add('hidden');
+    });
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  function startDay() {
+    const num = document.getElementById('numPlayers').value;
+    console.log('Starting day with', num, 'players'); // Debug log
+    socket.emit('setPlayers', num);
+  }
+
+  function submitRaceName() {
+    const name = document.getElementById('raceName').value.trim();
+    if (!name) return;
+    socket.emit('setRaceName', name);
+  }
+
+  function submitBet() {
+    const name = document.getElementById('playerName').value.trim();
+    const bet = document.getElementById('betInput').value.trim();
+    if (!name || !bet) return;
+    socket.emit('placeBet', { name, bet });
+    hasSubmitted = true;
+    document.getElementById('waitRaceTitle').textContent = document.getElementById('raceTitle').textContent;
+    show('waitingScreen');
+  }
+
+  function nextRound() {
+    hasSubmitted = false;
+    socket.emit('newRound');
+  }
+
   // =====================================================
-  // SOCKET EVENTS (UPDATED)
+  // EJECT FUNCTIONS
+  // =====================================================
+
+  function showEjectModal() {
+    document.getElementById('ejectModal').classList.remove('hidden');
+  }
+
+  function closeEjectModal() {
+    document.getElementById('ejectModal').classList.add('hidden');
+  }
+
+  function confirmEject() {
+    closeEjectModal();
+    socket.emit('ejectRace');
+  }
+
+  // =====================================================
+  // PASSWORD MODAL FUNCTIONS
+  // =====================================================
+
+  function showPasswordModal() {
+    document.getElementById('modalPassword').value = '';
+    document.getElementById('modalError').textContent = '';
+    document.getElementById('passwordModal').classList.remove('hidden');
+    document.getElementById('modalPassword').focus();
+  }
+
+  function closePasswordModal() {
+    document.getElementById('passwordModal').classList.add('hidden');
+  }
+
+  function confirmNewDay() {
+    const pw = document.getElementById('modalPassword').value;
+    if (!pw) {
+      document.getElementById('modalError').textContent = 'Please enter a password.';
+      return;
+    }
+    socket.emit('newRacingDay', pw);
+  }
+
+  document.getElementById('modalPassword').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmNewDay();
+  });
+
+  function downloadHistory() {
+    let text = '=== BETTING GAME HISTORY ===\n';
+    text += 'Downloaded: ' + new Date().toLocaleString() + '\n';
+    text += '================================\n\n';
+
+    const allRounds = [...fullHistory];
+    if (currentRaceName && Object.keys(currentBets).length > 0) {
+      const lastInHistory = fullHistory[fullHistory.length - 1];
+      const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
+      if (!alreadyIncluded) {
+        allRounds.push({ raceName: currentRaceName, bets: currentBets });
+      }
+    }
+
+    if (allRounds.length === 0) {
+      text += 'No bets recorded yet.\n';
+    } else {
+      allRounds.forEach((round, i) => {
+        text += '--- ' + round.raceName + ' ---\n';
+        for (const [player, betData] of Object.entries(round.bets)) {
+          let betText, betTime;
+          if (typeof betData === 'object' && betData.bet) {
+            betText = betData.bet;
+            betTime = betData.time;
+          } else {
+            betText = betData;
+            betTime = null;
+          }
+          const total = calculateBetTotal(betText);
+          const timeStr = formatTime(betTime);
+          text += '\n' + player + ' (Total: $' + total + ', Time: ' + timeStr + '):\n';
+          text += betText + '\n';
+        }
+        text += '\n';
+      });
+    }
+
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // =====================================================
+  // SOCKET EVENTS
   // =====================================================
 
   socket.on('state', (data) => {
@@ -900,6 +1225,15 @@
 
   socket.on('authError', (msg) => {
     document.getElementById('modalError').textContent = msg;
+  });
+
+  // Add connection status logging
+  socket.on('connect', () => {
+    console.log('Connected to server');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Disconnected from server');
   });
 </script>
   
