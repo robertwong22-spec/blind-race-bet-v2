@@ -542,6 +542,20 @@
       font-family: 'Consolas', 'Monaco', monospace;
       word-break: break-all;
     }
+/* Add to existing CSS */
+.submitted-time {
+  font-size: 0.7rem;
+  color: #888;
+  margin-left: 4px;
+  font-weight: normal;
+}
+
+.history-time {
+  font-size: 0.75rem;
+  color: #666;
+  margin-left: 8px;
+  font-style: italic;
+}
   </style>
 </head>
 <body>
@@ -801,6 +815,170 @@ function parseBetLine(line) {
       const horses = new Set(str.split(''));
       return horses.size;
     }
+
+    // Add this helper function to format time
+function formatTime(date) {
+  const d = new Date(date);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+// Update the renderSubmittedNames function
+function renderSubmittedNames(namesWithTimes, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  for (const item of namesWithTimes) {
+    const tag = document.createElement('span');
+    tag.className = 'submitted-name-tag';
+    const time = item.time ? formatTime(item.time) : '--:--';
+    tag.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span class="tag-check">✓</span>
+          <span>${escHtml(item.name)}</span>
+        </div>
+        <div class="submitted-time">${time}</div>
+      </div>
+    `;
+    container.appendChild(tag);
+  }
+}
+
+// Update the renderHistory function to include times
+function renderHistory(history) {
+  const container = document.getElementById('historyContainer');
+  if (!history || history.length <= 1) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+  let html = '<h3>📋 Previous Races</h3>';
+  for (let i = 0; i < history.length - 1; i++) {
+    const round = history[i];
+    const ejectedPlayers = round.ejectedPlayers || [];
+    html += '<div class="history-round">';
+    html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
+    for (const betData of round.bets) { // Note: bets is now an array
+      const player = betData.name;
+      const bet = betData.bet;
+      const time = betData.time;
+      const isEjected = ejectedPlayers.includes(player);
+      const total = calculateBetTotal(bet);
+      const timeStr = time ? formatTime(time) : '--:--';
+      html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
+      html += '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
+      html += '<div>';
+      html += '<div class="h-name">' + escHtml(player) + '</div>';
+      html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(bet)) + '</div>';
+      html += '</div>';
+      html += '<div class="history-time">' + timeStr + '</div>';
+      html += '</div>';
+      html += '<div class="h-total">Total: $' + total + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+// Helper function to get current time in HH:MM format
+function getCurrentTime() {
+  const now = new Date();
+  return now.getHours().toString().padStart(2, '0') + ':' + 
+         now.getMinutes().toString().padStart(2, '0');
+}
+
+// Update renderSubmittedNames to include time
+function renderSubmittedNames(names, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  for (const name of names) {
+    const tag = document.createElement('span');
+    tag.className = 'submitted-name-tag';
+    tag.innerHTML = `
+      <span class="tag-check">✓</span>
+      ${escHtml(name)}
+      <span class="submitted-time">${getCurrentTime()}</span>
+    `;
+    container.appendChild(tag);
+  }
+}
+
+// Update renderHistory to show time
+function renderHistory(history) {
+  const container = document.getElementById('historyContainer');
+  if (!history || history.length <= 1) {
+    container.classList.add('hidden');
+    return;
+  }
+  container.classList.remove('hidden');
+  let html = '<h3>📋 Previous Races</h3>';
+  for (let i = 0; i < history.length - 1; i++) {
+    const round = history[i];
+    const ejectedPlayers = round.ejectedPlayers || [];
+    html += '<div class="history-round">';
+    html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
+    for (const [player, bet] of Object.entries(round.bets)) {
+      const isEjected = ejectedPlayers.includes(player);
+      const total = calculateBetTotal(bet);
+      html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
+      html += '<div style="display: flex; justify-content: space-between;">';
+      html += '<div class="h-name">' + escHtml(player) + '</div>';
+      html += '<div class="history-time">' + getCurrentTime() + '</div>';
+      html += '</div>';
+      html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(bet)) + '</div>';
+      html += '<div class="h-total">Total: $' + total + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+// Update renderCards to show time on reveal screen
+function renderCards(bets, ejectedPlayers = []) {
+  const container = document.getElementById('cardsContainer');
+  container.innerHTML = '';
+  for (const [player, bet] of Object.entries(bets)) {
+    const isEjected = ejectedPlayers.includes(player);
+    const total = calculateBetTotal(bet);
+    const card = document.createElement('div');
+    card.className = 'bet-card' + (isEjected ? ' ejected' : '');
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div class="player-name">${escHtml(player)}</div>
+        <div class="submitted-time" style="margin-top: 0; font-size: 0.85rem;">${getCurrentTime()}</div>
+      </div>
+      <div class="bet-content">${isEjected ? '(No bet submitted)' : escHtml(bet)}</div>
+      <div class="bet-total">Total: $${total}</div>
+    `;
+    container.appendChild(card);
+  }
+}
+    
+// Update the renderCards function if needed (for reveal screen)
+function renderCards(betsWithTimes, ejectedPlayers = []) {
+  const container = document.getElementById('cardsContainer');
+  container.innerHTML = '';
+  for (const betData of betsWithTimes) {
+    const player = betData.name;
+    const bet = betData.bet;
+    const time = betData.time;
+    const isEjected = ejectedPlayers.includes(player);
+    const total = calculateBetTotal(bet);
+    const timeStr = time ? formatTime(time) : '--:--';
+    const card = document.createElement('div');
+    card.className = 'bet-card' + (isEjected ? ' ejected' : '');
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div class="player-name">${escHtml(player)}</div>
+        <div class="submitted-time" style="margin-top: 0;">${timeStr}</div>
+      </div>
+      <div class="bet-content">${isEjected ? '(No bet submitted)' : escHtml(bet)}</div>
+      <div class="bet-total">Total: $${total}</div>
+    `;
+    container.appendChild(card);
+  }
+}
     
     function calculateQuinellaDash(left, right) {
       const leftHorses = new Set(left.split(''));
@@ -948,44 +1126,55 @@ function parseBetLine(line) {
       if (e.key === 'Enter') confirmNewDay();
     });
 
-    function downloadHistory() {
-      let text = '=== BETTING GAME HISTORY ===\n';
-      text += 'Downloaded: ' + new Date().toLocaleString() + '\n';
-      text += '================================\n\n';
+function downloadHistory() {
+  let text = '=== BETTING GAME HISTORY ===\n';
+  text += 'Downloaded: ' + new Date().toLocaleString() + '\n';
+  text += '================================\n\n';
 
-      const allRounds = [...fullHistory];
-      if (currentRaceName && Object.keys(currentBets).length > 0) {
-        const lastInHistory = fullHistory[fullHistory.length - 1];
-        const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
-        if (!alreadyIncluded) {
-          allRounds.push({ raceName: currentRaceName, bets: currentBets });
-        }
-      }
-
-      if (allRounds.length === 0) {
-        text += 'No bets recorded yet.\n';
-      } else {
-        allRounds.forEach((round, i) => {
-          text += '--- ' + round.raceName + ' ---\n';
-          for (const [player, bet] of Object.entries(round.bets)) {
-            const total = calculateBetTotal(bet);
-            text += '\n' + player + ' (Total: $' + total + '):\n';
-            text += bet + '\n';
-          }
-          text += '\n';
-        });
-      }
-
-      const blob = new Blob([text], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+  const allRounds = [...fullHistory];
+  if (currentRaceName && Object.keys(currentBets).length > 0) {
+    const lastInHistory = fullHistory[fullHistory.length - 1];
+    const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
+    if (!alreadyIncluded) {
+      allRounds.push({ raceName: currentRaceName, bets: currentBets });
     }
+  }
+
+  if (allRounds.length === 0) {
+    text += 'No bets recorded yet.\n';
+  } else {
+    allRounds.forEach((round, i) => {
+      text += '--- ' + round.raceName + ' ---\n';
+      for (const [player, bet] of Object.entries(round.bets)) {
+        const total = calculateBetTotal(bet);
+        text += '\n' + player + ' (Total: $' + total + ', Time: ' + getCurrentTime() + '):\n';
+        text += bet + '\n';
+      }
+      text += '\n';
+    });
+  }
+
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
     function renderCards(bets, ejectedPlayers = []) {
       const container = document.getElementById('cardsContainer');
