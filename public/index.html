@@ -563,28 +563,38 @@
     <button class="btn-primary" onclick="submitRaceName()">Open Betting</button>
   </div>
 
-  <!-- SCREEN: Place bet -->
-  <div id="betScreen" class="container hidden">
-    <h2 id="raceTitle">Race</h2>
-    <label for="playerName">Your name:</label>
-    <input type="text" id="playerName" />
-    <label for="betInput">Your bet:</label>
-    <textarea id="betInput"></textarea>
-    <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
-    <div id="betErrorsContainer" class="bet-errors"></div>
-    <div class="bet-input-wrapper">
+<!-- SCREEN: Place bet -->
+<div id="betScreen" class="container hidden">
+  <h2 id="raceTitle">Race</h2>
+  <label for="playerName">Your name:</label>
+  <input type="text" id="playerName" />
+  <label for="betInput">Your bet:</label>
+  <textarea id="betInput"></textarea>
+  <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
+  <div id="betErrorsContainer" class="bet-errors"></div>
+  
+  <!-- Row with submit button and submitted names -->
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 24px;">
+    <div style="flex-shrink: 0;">
       <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
     </div>
-    <p id="betStatus" class="status"></p>
-    <div class="submitted-names-section">
-      <h4>✓ Submitted</h4>
-      <div id="betSubmittedNamesList" class="submitted-names-list"></div>
-    </div>
-    <div class="eject-section">
-      <p>Race started? Force reveal all bets now.</p>
-      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+    <div style="flex-grow: 1; margin-left: 20px;">
+      <div class="submitted-names-section" style="margin-top: 0; padding: 12px 16px;">
+        <h4 style="font-size: 0.95rem; color: #ffd700; margin-bottom: 8px; text-align: left;">
+          ✓ Submitted
+        </h4>
+        <div id="betSubmittedNamesList" class="submitted-names-list"></div>
+      </div>
     </div>
   </div>
+  
+  <p id="betStatus" class="status"></p>
+  
+  <div class="eject-section">
+    <p>Race started? Force reveal all bets now.</p>
+    <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+  </div>
+</div>
 
   <!-- SCREEN: Submitted waiting -->
   <div id="waitingScreen" class="container hidden">
