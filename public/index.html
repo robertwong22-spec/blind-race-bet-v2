@@ -144,17 +144,15 @@
     }
 
     .btn-eject {
-      background: rgba(255,255,255,0.1);
-      color: #888;
-      padding: 6px 14px;
-      font-size: 0.8rem;
-      border: 1px solid rgba(255,255,255,0.15);
-      margin: 0;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 15px rgba(231,76,60,0.3);
     }
 
     .btn-eject:hover {
-      background: rgba(255,255,255,0.2);
-      color: #ccc;
+      box-shadow: 0 6px 20px rgba(231,76,60,0.5);
     }
 
     .btn-newrace {
@@ -379,52 +377,41 @@
     }
 
     .submitted-names-section {
-      margin-top: 10px;
-      padding: 10px 14px;
+      margin-top: 20px;
+      padding: 16px;
       background: rgba(255,255,255,0.08);
       border-radius: 10px;
     }
 
-    .submitted-names-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .submitted-names-header h4 {
-      font-size: 0.9rem;
+    .submitted-names-section h4 {
+      font-size: 0.95rem;
       color: #ffd700;
-      margin: 0;
-    }
-
-    .submitted-names-header .bet-count {
-      font-size: 0.85rem;
-      color: #aee;
-      font-weight: 600;
+      margin-bottom: 12px;
+      text-align: center;
     }
 
     .submitted-names-list {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+      justify-content: center;
     }
 
     .submitted-name-tag {
       background: linear-gradient(135deg, #2ecc71, #27ae60);
       color: #fff;
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       animation: tagIn 0.3s ease-out both;
     }
 
     .submitted-name-tag .tag-check {
-      font-size: 0.75rem;
+      font-size: 0.8rem;
     }
 
     @keyframes tagIn {
@@ -439,8 +426,16 @@
     }
 
     .eject-section {
-      margin-top: 16px;
-      text-align: right;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      text-align: center;
+    }
+
+    .eject-section p {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 10px;
     }
 
     .modal-overlay {
@@ -496,28 +491,28 @@
     .bet-total-display {
       background: linear-gradient(135deg, #ffd700, #ffaa00);
       color: #1a1a2e;
-      padding: 10px 16px;
+      padding: 12px 18px;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
       text-align: center;
       box-shadow: 0 4px 15px rgba(255,215,0,0.3);
     }
 
-    .bet-actions-row {
+    .bet-input-wrapper {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
 
-    .bet-actions-row button {
+    .bet-input-wrapper button {
       margin: 0;
     }
 
     .bet-errors {
-      margin-bottom: 10px;
+      margin-bottom: 14px;
     }
 
     .bet-error-item {
@@ -577,16 +572,17 @@
     <textarea id="betInput"></textarea>
     <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
     <div id="betErrorsContainer" class="bet-errors"></div>
-    <div class="bet-actions-row">
+    <div class="bet-input-wrapper">
       <button class="btn-primary" onclick="submitBet()">Submit Bet</button>
-      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
+    <p id="betStatus" class="status"></p>
     <div class="submitted-names-section">
-      <div class="submitted-names-header">
-        <h4>✓ Submitted</h4>
-        <span id="betStatus" class="bet-count">0 / 3</span>
-      </div>
+      <h4>✓ Submitted</h4>
       <div id="betSubmittedNamesList" class="submitted-names-list"></div>
+    </div>
+    <div class="eject-section">
+      <p>Race started? Force reveal all bets now.</p>
+      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
   </div>
 
@@ -597,14 +593,13 @@
       <span class="check">✅</span>
       Bet submitted! Waiting for others<span class="waiting-dots"></span>
     </div>
+    <p id="waitStatus" class="status"></p>
     <div class="submitted-names-section">
-      <div class="submitted-names-header">
-        <h4>✓ Submitted</h4>
-        <span id="waitStatus" class="bet-count">0 / 3</span>
-      </div>
+      <h4>✓ Submitted</h4>
       <div id="submittedNamesList" class="submitted-names-list"></div>
     </div>
     <div class="eject-section">
+      <p>Race started? Force reveal all bets now.</p>
       <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
     </div>
   </div>
@@ -660,7 +655,6 @@
     let currentRaceName = '';
     let currentBets = {};
     let submittedNames = [];
-    let targetPlayers = 3;
 
     // =====================================================
     // BET CALCULATOR
@@ -701,86 +695,97 @@
       return { total, errors };
     }
     
-    function parseBetLine(line) {
-      let cleaned = line.replace(/\s+/g, '');
-      if (!cleaned) return { amount: 0, error: null };
+function parseBetLine(line) {
+  // Remove all spaces
+  let cleaned = line.replace(/\s+/g, '');
+  if (!cleaned) return { amount: 0, error: null };
 
-      if (cleaned.toLowerCase() === 'n') {
-        return { amount: 0, error: null };
+   // Check for "no bet" input
+  if (cleaned.toLowerCase() === 'n') {
+    return { amount: 0, error: null };
+  }
+  
+  // Check if line ends with dash (incomplete input - user is typing)
+  if (cleaned.endsWith('-')) {
+    return { amount: 0, error: null };
+  }
+  
+  // Horse characters: 0-9, a-l (lowercase only)
+  // Bet types: W, Q, T (case insensitive), F (uppercase only - to distinguish from horse 'f')
+  // Pattern: (horses)(-horses)? (betType)? (amount)?
+  
+  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
+  
+  if (!match) {
+    return { amount: 0, error: 'Invalid format' };
+  }
+  
+  const leftSide = match[1];
+  const rightSide = match[2] || null;
+  let betType = match[3] ? match[3].toUpperCase() : null;
+  const amount = match[4] ? parseInt(match[4], 10) : 10;
+  
+  const hasDash = rightSide !== null;
+  
+  // Default bet type
+  if (!betType) {
+    betType = hasDash ? 'Q' : 'W';
+  }
+  
+  let combinations = 0;
+  
+  switch (betType) {
+    case 'W':
+      if (hasDash) {
+        return { amount: 0, error: 'Win bet does not allow a dash' };
       }
-      
-      if (cleaned.endsWith('-')) {
-        return { amount: 0, error: null };
+      combinations = countUniqueHorses(leftSide);
+      break;
+    case 'Q':
+      if (hasDash) {
+        combinations = calculateQuinellaDash(leftSide, rightSide);
+      } else {
+        const n = countUniqueHorses(leftSide);
+        if (n < 2) {
+          return { amount: 0, error: 'Quinella needs at least 2 horses' };
+        }
+        combinations = (n * (n - 1)) / 2;
       }
-      
-      const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
-      
-      if (!match) {
-        return { amount: 0, error: 'Invalid format' };
+      break;
+    case 'F':
+      if (hasDash) {
+        combinations = calculateForecast(leftSide, rightSide);
       }
-      
-      const leftSide = match[1];
-      const rightSide = match[2] || null;
-      let betType = match[3] ? match[3].toUpperCase() : null;
-      const amount = match[4] ? parseInt(match[4], 10) : 10;
-      
-      const hasDash = rightSide !== null;
-      
-      if (!betType) {
-        betType = hasDash ? 'Q' : 'W';
-      }
-      
-      let combinations = 0;
-      
-      switch (betType) {
-        case 'W':
-          if (hasDash) {
-            return { amount: 0, error: 'Win bet does not allow a dash' };
+      break;
+ case 'T':
+      if (hasDash) {
+        const leftCount = countUniqueHorses(leftSide);
+        const rightCount = countUniqueHorses(rightSide);
+        
+        // Check for duplicates between sides
+        const leftHorses = new Set(leftSide.split(''));
+        const rightHorses = new Set(rightSide.split(''));
+        for (const horse of leftHorses) {
+          if (rightHorses.has(horse)) {
+            return { amount: 0, error: 'Trio cannot have same horse on both sides' };
           }
-          combinations = countUniqueHorses(leftSide);
-          break;
-        case 'Q':
-          if (hasDash) {
-            combinations = calculateQuinellaDash(leftSide, rightSide);
-          } else {
-            const n = countUniqueHorses(leftSide);
-            if (n < 2) {
-              return { amount: 0, error: 'Quinella needs at least 2 horses' };
-            }
-            combinations = (n * (n - 1)) / 2;
-          }
-          break;
-        case 'F':
-          if (hasDash) {
-            combinations = calculateForecast(leftSide, rightSide);
-          }
-          break;
-        case 'T':
-          if (hasDash) {
-            const leftCount = countUniqueHorses(leftSide);
-            const rightCount = countUniqueHorses(rightSide);
-            
-            const leftHorses = new Set(leftSide.split(''));
-            const rightHorses = new Set(rightSide.split(''));
-            for (const horse of leftHorses) {
-              if (rightHorses.has(horse)) {
-                return { amount: 0, error: 'Trio cannot have same horse on both sides' };
-              }
-            }
-            
-            if (leftCount === 1) {
-              combinations = (rightCount * (rightCount - 1)) / 2;
-            } else if (leftCount === 2) {
-              combinations = rightCount;
-            } else {
-              return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
-            }
-          }
-          break;
+        }
+        
+        if (leftCount === 1) {
+          // One banker: combinations = n(n-1)/2 where n = right side horses
+          combinations = (rightCount * (rightCount - 1)) / 2;
+        } else if (leftCount === 2) {
+          // Two bankers: combinations = n where n = right side horses
+          combinations = rightCount;
+        } else {
+          return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
+        }
       }
-      
-      return { amount: combinations * amount, error: null };
-    }
+      break;
+  }
+  
+  return { amount: combinations * amount, error: null };
+}
     
     function countUniqueHorses(str) {
       const horses = new Set(str.split(''));
@@ -791,6 +796,7 @@
       const leftHorses = new Set(left.split(''));
       const rightHorses = new Set(right.split(''));
       
+      // Count duplicates (horses appearing on both sides)
       let duplicates = 0;
       for (const horse of leftHorses) {
         if (rightHorses.has(horse)) {
@@ -798,6 +804,7 @@
         }
       }
       
+      // Total combinations: left × right - n(n+1)/2 where n = duplicates
       const rawCombos = leftHorses.size * rightHorses.size;
       const subtract = (duplicates * (duplicates + 1)) / 2;
       
@@ -808,6 +815,7 @@
       const leftHorses = new Set(left.split(''));
       const rightHorses = new Set(right.split(''));
       
+      // Count duplicates
       let duplicates = 0;
       for (const horse of leftHorses) {
         if (rightHorses.has(horse)) {
@@ -815,6 +823,7 @@
         }
       }
       
+      // Total combinations: left × right - n where n = duplicates
       const rawCombos = leftHorses.size * rightHorses.size;
       
       return rawCombos - duplicates;
@@ -826,6 +835,7 @@
       
       document.getElementById('betTotalDisplay').textContent = 'Total: $' + result.total;
       
+      // Display errors
       const errorsContainer = document.getElementById('betErrorsContainer');
       if (result.errors.length > 0) {
         let errorsHtml = '';
@@ -843,6 +853,7 @@
       }
     }
     
+    // Attach event listener to bet input
     document.getElementById('betInput').addEventListener('input', updateBetTotal);
 
     // =====================================================
@@ -1021,11 +1032,6 @@
       }
     }
 
-    function updateStatusText(count, target) {
-      document.getElementById('betStatus').textContent = count + ' / ' + target;
-      document.getElementById('waitStatus').textContent = count + ' / ' + target;
-    }
-
     function escHtml(str) {
       const d = document.createElement('div');
       d.textContent = str;
@@ -1037,7 +1043,6 @@
       currentRaceCounter = data.raceCounter || 1;
       fullHistory = data.history || [];
       submittedNames = data.submittedNames || [];
-      targetPlayers = data.target || 3;
       if (data.revealed && data.bets) {
         currentRaceName = data.raceName;
         currentBets = data.bets;
@@ -1048,7 +1053,7 @@
       } else if (data.gameStarted && data.raceName) {
         currentRaceName = data.raceName;
         document.getElementById('raceTitle').textContent = data.raceName;
-        updateStatusText(data.betCount, data.target);
+        document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
         renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
         show('betScreen');
       } else if (data.gameStarted) {
@@ -1072,13 +1077,12 @@
     socket.on('roundStart', (data) => {
       hasSubmitted = false;
       currentRaceName = data.raceName;
-      targetPlayers = data.target;
       submittedNames = [];
       document.getElementById('raceTitle').textContent = data.raceName;
       document.getElementById('betInput').value = '';
       document.getElementById('betTotalDisplay').textContent = 'Total: $0';
       document.getElementById('betErrorsContainer').innerHTML = '';
-      updateStatusText(0, data.target);
+      document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
       renderSubmittedNames([], 'betSubmittedNamesList');
       renderSubmittedNames([], 'submittedNamesList');
       show('betScreen');
@@ -1086,8 +1090,8 @@
 
     socket.on('betUpdate', (data) => {
       submittedNames = data.submittedNames || [];
-      targetPlayers = data.target;
-      updateStatusText(data.count, data.target);
+      document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
+      document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
       renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
       renderSubmittedNames(submittedNames, 'submittedNamesList');
     });
