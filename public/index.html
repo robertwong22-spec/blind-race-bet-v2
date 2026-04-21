@@ -670,656 +670,510 @@
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    let hasSubmitted = false;
-    let currentRaceCounter = 1;
-    let fullHistory = [];
-    let currentRaceName = '';
-    let currentBets = {};
-    let submittedNames = [];
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  let hasSubmitted = false;
+  let currentRaceCounter = 1;
+  let fullHistory = [];
+  let currentRaceName = '';
+  let currentBets = {};
+  let submittedNames = [];
 
-    // =====================================================
-    // BET CALCULATOR
-    // =====================================================
+  // =====================================================
+  // BET CALCULATOR
+  // =====================================================
+  
+  function calculateBetTotal(betText) {
+    if (!betText || betText === '(No bet submitted)') return 0;
+    const lines = betText.split('\n');
+    let total = 0;
     
-    function calculateBetTotal(betText) {
-      if (!betText || betText === '(No bet submitted)') return 0;
-      const lines = betText.split('\n');
-      let total = 0;
-      
-      for (const line of lines) {
-        const result = parseBetLine(line);
-        total += result.amount;
-      }
-      
-      return total;
+    for (const line of lines) {
+      const result = parseBetLine(line);
+      total += result.amount;
     }
     
-    function calculateBetWithErrors(betText) {
-      const lines = betText.split('\n');
-      let total = 0;
-      let errors = [];
+    return total;
+  }
+  
+  function calculateBetWithErrors(betText) {
+    const lines = betText.split('\n');
+    let total = 0;
+    let errors = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const result = parseBetLine(line);
+      total += result.amount;
       
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const result = parseBetLine(line);
-        total += result.amount;
-        
-        if (result.error) {
-          errors.push({
-            lineNumber: i + 1,
-            lineText: line,
-            error: result.error
-          });
-        }
+      if (result.error) {
+        errors.push({
+          lineNumber: i + 1,
+          lineText: line,
+          error: result.error
+        });
       }
-      
-      return { total, errors };
     }
     
-function parseBetLine(line) {
-  // Remove all spaces
-  let cleaned = line.replace(/\s+/g, '');
-  if (!cleaned) return { amount: 0, error: null };
+    return { total, errors };
+  }
+  
+  function parseBetLine(line) {
+    // Remove all spaces
+    let cleaned = line.replace(/\s+/g, '');
+    if (!cleaned) return { amount: 0, error: null };
 
-   // Check for "no bet" input
-  if (cleaned.toLowerCase() === 'n') {
-    return { amount: 0, error: null };
-  }
-  
-  // Check if line ends with dash (incomplete input - user is typing)
-  if (cleaned.endsWith('-')) {
-    return { amount: 0, error: null };
-  }
-  
-  // Horse characters: 0-9, a-l (lowercase only)
-  // Bet types: W, Q, T (case insensitive), F (uppercase only - to distinguish from horse 'f')
-  // Pattern: (horses)(-horses)? (betType)? (amount)?
-  
-  const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
-  
-  if (!match) {
-    return { amount: 0, error: 'Invalid format' };
-  }
-  
-  const leftSide = match[1];
-  const rightSide = match[2] || null;
-  let betType = match[3] ? match[3].toUpperCase() : null;
-  const amount = match[4] ? parseInt(match[4], 10) : 10;
-  
-  const hasDash = rightSide !== null;
-  
-  // Default bet type
-  if (!betType) {
-    betType = hasDash ? 'Q' : 'W';
-  }
-  
-  let combinations = 0;
-  
-  switch (betType) {
-    case 'W':
-      if (hasDash) {
-        return { amount: 0, error: 'Win bet does not allow a dash' };
-      }
-      combinations = countUniqueHorses(leftSide);
-      break;
-    case 'Q':
-      if (hasDash) {
-        combinations = calculateQuinellaDash(leftSide, rightSide);
-      } else {
-        const n = countUniqueHorses(leftSide);
-        if (n < 2) {
-          return { amount: 0, error: 'Quinella needs at least 2 horses' };
+     // Check for "no bet" input
+    if (cleaned.toLowerCase() === 'n') {
+      return { amount: 0, error: null };
+    }
+    
+    // Check if line ends with dash (incomplete input - user is typing)
+    if (cleaned.endsWith('-')) {
+      return { amount: 0, error: null };
+    }
+    
+    // Horse characters: 0-9, a-l (lowercase only)
+    // Bet types: W, Q, T (case insensitive), F (uppercase only - to distinguish from horse 'f')
+    // Pattern: (horses)(-horses)? (betType)? (amount)?
+    
+    const match = cleaned.match(/^([0-9a-l]+)(?:-([0-9a-l]+))?([WwQqTtF])?(\d+)?$/);
+    
+    if (!match) {
+      return { amount: 0, error: 'Invalid format' };
+    }
+    
+    const leftSide = match[1];
+    const rightSide = match[2] || null;
+    let betType = match[3] ? match[3].toUpperCase() : null;
+    const amount = match[4] ? parseInt(match[4], 10) : 10;
+    
+    const hasDash = rightSide !== null;
+    
+    // Default bet type
+    if (!betType) {
+      betType = hasDash ? 'Q' : 'W';
+    }
+    
+    let combinations = 0;
+    
+    switch (betType) {
+      case 'W':
+        if (hasDash) {
+          return { amount: 0, error: 'Win bet does not allow a dash' };
         }
-        combinations = (n * (n - 1)) / 2;
-      }
-      break;
-    case 'F':
-      if (hasDash) {
-        combinations = calculateForecast(leftSide, rightSide);
-      }
-      break;
- case 'T':
-      if (hasDash) {
-        const leftCount = countUniqueHorses(leftSide);
-        const rightCount = countUniqueHorses(rightSide);
-        
-        // Check for duplicates between sides
-        const leftHorses = new Set(leftSide.split(''));
-        const rightHorses = new Set(rightSide.split(''));
-        for (const horse of leftHorses) {
-          if (rightHorses.has(horse)) {
-            return { amount: 0, error: 'Trio cannot have same horse on both sides' };
+        combinations = countUniqueHorses(leftSide);
+        break;
+      case 'Q':
+        if (hasDash) {
+          combinations = calculateQuinellaDash(leftSide, rightSide);
+        } else {
+          const n = countUniqueHorses(leftSide);
+          if (n < 2) {
+            return { amount: 0, error: 'Quinella needs at least 2 horses' };
+          }
+          combinations = (n * (n - 1)) / 2;
+        }
+        break;
+      case 'F':
+        if (hasDash) {
+          combinations = calculateForecast(leftSide, rightSide);
+        }
+        break;
+      case 'T':
+        if (hasDash) {
+          const leftCount = countUniqueHorses(leftSide);
+          const rightCount = countUniqueHorses(rightSide);
+          
+          // Check for duplicates between sides
+          const leftHorses = new Set(leftSide.split(''));
+          const rightHorses = new Set(rightSide.split(''));
+          for (const horse of leftHorses) {
+            if (rightHorses.has(horse)) {
+              return { amount: 0, error: 'Trio cannot have same horse on both sides' };
+            }
+          }
+          
+          if (leftCount === 1) {
+            // One banker: combinations = n(n-1)/2 where n = right side horses
+            combinations = (rightCount * (rightCount - 1)) / 2;
+          } else if (leftCount === 2) {
+            // Two bankers: combinations = n where n = right side horses
+            combinations = rightCount;
+          } else {
+            return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
           }
         }
-        
-        if (leftCount === 1) {
-          // One banker: combinations = n(n-1)/2 where n = right side horses
-          combinations = (rightCount * (rightCount - 1)) / 2;
-        } else if (leftCount === 2) {
-          // Two bankers: combinations = n where n = right side horses
-          combinations = rightCount;
-        } else {
-          return { amount: 0, error: 'Trio needs 1 or 2 horses on left side' };
-        }
-      }
-      break;
+        break;
+    }
+    
+    return { amount: combinations * amount, error: null };
   }
   
-  return { amount: combinations * amount, error: null };
-}
+  function countUniqueHorses(str) {
+    const horses = new Set(str.split(''));
+    return horses.size;
+  }
+  
+  function calculateQuinellaDash(left, right) {
+    const leftHorses = new Set(left.split(''));
+    const rightHorses = new Set(right.split(''));
     
-    function countUniqueHorses(str) {
-      const horses = new Set(str.split(''));
-      return horses.size;
-    }
-
-    // Add this helper function to format time
-function formatTime(date) {
-  const d = new Date(date);
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-}
-
-// Update the renderSubmittedNames function
-function renderSubmittedNames(namesWithTimes, containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  for (const item of namesWithTimes) {
-    const tag = document.createElement('span');
-    tag.className = 'submitted-name-tag';
-    const time = item.time ? formatTime(item.time) : '--:--';
-    tag.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <span class="tag-check">✓</span>
-          <span>${escHtml(item.name)}</span>
-        </div>
-        <div class="submitted-time">${time}</div>
-      </div>
-    `;
-    container.appendChild(tag);
-  }
-}
-
-// Update the renderHistory function to include times
-function renderHistory(history) {
-  const container = document.getElementById('historyContainer');
-  if (!history || history.length <= 1) {
-    container.classList.add('hidden');
-    return;
-  }
-  container.classList.remove('hidden');
-  let html = '<h3>📋 Previous Races</h3>';
-  for (let i = 0; i < history.length - 1; i++) {
-    const round = history[i];
-    const ejectedPlayers = round.ejectedPlayers || [];
-    html += '<div class="history-round">';
-    html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
-    for (const betData of round.bets) { // Note: bets is now an array
-      const player = betData.name;
-      const bet = betData.bet;
-      const time = betData.time;
-      const isEjected = ejectedPlayers.includes(player);
-      const total = calculateBetTotal(bet);
-      const timeStr = time ? formatTime(time) : '--:--';
-      html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
-      html += '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
-      html += '<div>';
-      html += '<div class="h-name">' + escHtml(player) + '</div>';
-      html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(bet)) + '</div>';
-      html += '</div>';
-      html += '<div class="history-time">' + timeStr + '</div>';
-      html += '</div>';
-      html += '<div class="h-total">Total: $' + total + '</div>';
-      html += '</div>';
-    }
-    html += '</div>';
-  }
-  container.innerHTML = html;
-}
-
-// Helper function to get current time in HH:MM format
-function getCurrentTime() {
-  const now = new Date();
-  return now.getHours().toString().padStart(2, '0') + ':' + 
-         now.getMinutes().toString().padStart(2, '0');
-}
-
-// Update renderSubmittedNames to include time
-function renderSubmittedNames(names, containerId) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  for (const name of names) {
-    const tag = document.createElement('span');
-    tag.className = 'submitted-name-tag';
-    tag.innerHTML = `
-      <span class="tag-check">✓</span>
-      ${escHtml(name)}
-      <span class="submitted-time">${getCurrentTime()}</span>
-    `;
-    container.appendChild(tag);
-  }
-}
-
-// Update renderHistory to show time
-function renderHistory(history) {
-  const container = document.getElementById('historyContainer');
-  if (!history || history.length <= 1) {
-    container.classList.add('hidden');
-    return;
-  }
-  container.classList.remove('hidden');
-  let html = '<h3>📋 Previous Races</h3>';
-  for (let i = 0; i < history.length - 1; i++) {
-    const round = history[i];
-    const ejectedPlayers = round.ejectedPlayers || [];
-    html += '<div class="history-round">';
-    html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
-    for (const [player, bet] of Object.entries(round.bets)) {
-      const isEjected = ejectedPlayers.includes(player);
-      const total = calculateBetTotal(bet);
-      html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
-      html += '<div style="display: flex; justify-content: space-between;">';
-      html += '<div class="h-name">' + escHtml(player) + '</div>';
-      html += '<div class="history-time">' + getCurrentTime() + '</div>';
-      html += '</div>';
-      html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(bet)) + '</div>';
-      html += '<div class="h-total">Total: $' + total + '</div>';
-      html += '</div>';
-    }
-    html += '</div>';
-  }
-  container.innerHTML = html;
-}
-
-// Update renderCards to show time on reveal screen
-function renderCards(bets, ejectedPlayers = []) {
-  const container = document.getElementById('cardsContainer');
-  container.innerHTML = '';
-  for (const [player, bet] of Object.entries(bets)) {
-    const isEjected = ejectedPlayers.includes(player);
-    const total = calculateBetTotal(bet);
-    const card = document.createElement('div');
-    card.className = 'bet-card' + (isEjected ? ' ejected' : '');
-    card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div class="player-name">${escHtml(player)}</div>
-        <div class="submitted-time" style="margin-top: 0; font-size: 0.85rem;">${getCurrentTime()}</div>
-      </div>
-      <div class="bet-content">${isEjected ? '(No bet submitted)' : escHtml(bet)}</div>
-      <div class="bet-total">Total: $${total}</div>
-    `;
-    container.appendChild(card);
-  }
-}
-    
-// Update the renderCards function if needed (for reveal screen)
-function renderCards(betsWithTimes, ejectedPlayers = []) {
-  const container = document.getElementById('cardsContainer');
-  container.innerHTML = '';
-  for (const betData of betsWithTimes) {
-    const player = betData.name;
-    const bet = betData.bet;
-    const time = betData.time;
-    const isEjected = ejectedPlayers.includes(player);
-    const total = calculateBetTotal(bet);
-    const timeStr = time ? formatTime(time) : '--:--';
-    const card = document.createElement('div');
-    card.className = 'bet-card' + (isEjected ? ' ejected' : '');
-    card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div class="player-name">${escHtml(player)}</div>
-        <div class="submitted-time" style="margin-top: 0;">${timeStr}</div>
-      </div>
-      <div class="bet-content">${isEjected ? '(No bet submitted)' : escHtml(bet)}</div>
-      <div class="bet-total">Total: $${total}</div>
-    `;
-    container.appendChild(card);
-  }
-}
-    
-    function calculateQuinellaDash(left, right) {
-      const leftHorses = new Set(left.split(''));
-      const rightHorses = new Set(right.split(''));
-      
-      // Count duplicates (horses appearing on both sides)
-      let duplicates = 0;
-      for (const horse of leftHorses) {
-        if (rightHorses.has(horse)) {
-          duplicates++;
-        }
-      }
-      
-      // Total combinations: left × right - n(n+1)/2 where n = duplicates
-      const rawCombos = leftHorses.size * rightHorses.size;
-      const subtract = (duplicates * (duplicates + 1)) / 2;
-      
-      return rawCombos - subtract;
-    }
-    
-    function calculateForecast(left, right) {
-      const leftHorses = new Set(left.split(''));
-      const rightHorses = new Set(right.split(''));
-      
-      // Count duplicates
-      let duplicates = 0;
-      for (const horse of leftHorses) {
-        if (rightHorses.has(horse)) {
-          duplicates++;
-        }
-      }
-      
-      // Total combinations: left × right - n where n = duplicates
-      const rawCombos = leftHorses.size * rightHorses.size;
-      
-      return rawCombos - duplicates;
-    }
-    
-    function updateBetTotal() {
-      const betText = document.getElementById('betInput').value;
-      const result = calculateBetWithErrors(betText);
-      
-      document.getElementById('betTotalDisplay').textContent = 'Total: $' + result.total;
-      
-      // Display errors
-      const errorsContainer = document.getElementById('betErrorsContainer');
-      if (result.errors.length > 0) {
-        let errorsHtml = '';
-        for (const err of result.errors) {
-          errorsHtml += `
-            <div class="bet-error-item">
-              <span class="error-icon">✗</span>
-              <span class="error-text">Line ${err.lineNumber}: <span class="error-line">${escHtml(err.lineText)}</span> — ${err.error}</span>
-            </div>
-          `;
-        }
-        errorsContainer.innerHTML = errorsHtml;
-      } else {
-        errorsContainer.innerHTML = '';
+    // Count duplicates (horses appearing on both sides)
+    let duplicates = 0;
+    for (const horse of leftHorses) {
+      if (rightHorses.has(horse)) {
+        duplicates++;
       }
     }
     
-    // Attach event listener to bet input
-    document.getElementById('betInput').addEventListener('input', updateBetTotal);
-
-    // =====================================================
-    // ORIGINAL FUNCTIONS
-    // =====================================================
-
-    function show(id) {
-      ['setupScreen','nameScreen','betScreen','waitingScreen','revealScreen'].forEach(s => {
-        document.getElementById(s).classList.add('hidden');
-      });
-      document.getElementById(id).classList.remove('hidden');
-    }
-
-    function startDay() {
-      const num = document.getElementById('numPlayers').value;
-      socket.emit('setPlayers', num);
-    }
-
-    function submitRaceName() {
-      const name = document.getElementById('raceName').value.trim();
-      if (!name) return;
-      socket.emit('setRaceName', name);
-    }
-
-    function submitBet() {
-      const name = document.getElementById('playerName').value.trim();
-      const bet = document.getElementById('betInput').value.trim();
-      if (!name || !bet) return;
-      socket.emit('placeBet', { name, bet });
-      hasSubmitted = true;
-      document.getElementById('waitRaceTitle').textContent = document.getElementById('raceTitle').textContent;
-      show('waitingScreen');
-    }
-
-    function nextRound() {
-      hasSubmitted = false;
-      socket.emit('newRound');
-    }
-
-    // =====================================================
-    // EJECT FUNCTIONS
-    // =====================================================
-
-    function showEjectModal() {
-      document.getElementById('ejectModal').classList.remove('hidden');
-    }
-
-    function closeEjectModal() {
-      document.getElementById('ejectModal').classList.add('hidden');
-    }
-
-    function confirmEject() {
-      closeEjectModal();
-      socket.emit('ejectRace');
-    }
-
-    // =====================================================
-    // PASSWORD MODAL FUNCTIONS
-    // =====================================================
-
-    function showPasswordModal() {
-      document.getElementById('modalPassword').value = '';
-      document.getElementById('modalError').textContent = '';
-      document.getElementById('passwordModal').classList.remove('hidden');
-      document.getElementById('modalPassword').focus();
-    }
-
-    function closePasswordModal() {
-      document.getElementById('passwordModal').classList.add('hidden');
-    }
-
-    function confirmNewDay() {
-      const pw = document.getElementById('modalPassword').value;
-      if (!pw) {
-        document.getElementById('modalError').textContent = 'Please enter a password.';
-        return;
+    // Total combinations: left × right - n(n+1)/2 where n = duplicates
+    const rawCombos = leftHorses.size * rightHorses.size;
+    const subtract = (duplicates * (duplicates + 1)) / 2;
+    
+    return rawCombos - subtract;
+  }
+  
+  function calculateForecast(left, right) {
+    const leftHorses = new Set(left.split(''));
+    const rightHorses = new Set(right.split(''));
+    
+    // Count duplicates
+    let duplicates = 0;
+    for (const horse of leftHorses) {
+      if (rightHorses.has(horse)) {
+        duplicates++;
       }
-      socket.emit('newRacingDay', pw);
     }
+    
+    // Total combinations: left × right - n where n = duplicates
+    const rawCombos = leftHorses.size * rightHorses.size;
+    
+    return rawCombos - duplicates;
+  }
+  
+  function updateBetTotal() {
+    const betText = document.getElementById('betInput').value;
+    const result = calculateBetWithErrors(betText);
+    
+    document.getElementById('betTotalDisplay').textContent = 'Total: $' + result.total;
+    
+    // Display errors
+    const errorsContainer = document.getElementById('betErrorsContainer');
+    if (result.errors.length > 0) {
+      let errorsHtml = '';
+      for (const err of result.errors) {
+        errorsHtml += `
+          <div class="bet-error-item">
+            <span class="error-icon">✗</span>
+            <span class="error-text">Line ${err.lineNumber}: <span class="error-line">${escHtml(err.lineText)}</span> — ${err.error}</span>
+          </div>
+        `;
+      }
+      errorsContainer.innerHTML = errorsHtml;
+    } else {
+      errorsContainer.innerHTML = '';
+    }
+  }
+  
+  // Attach event listener to bet input
+  document.getElementById('betInput').addEventListener('input', updateBetTotal);
 
-    document.getElementById('modalPassword').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') confirmNewDay();
-    });
+  // =====================================================
+  // TIME FUNCTIONS
+  // =====================================================
 
-function downloadHistory() {
-  let text = '=== BETTING GAME HISTORY ===\n';
-  text += 'Downloaded: ' + new Date().toLocaleString() + '\n';
-  text += '================================\n\n';
+  // Helper function to get current time in HH:MM format
+  function getCurrentTime() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2, '0') + ':' + 
+           now.getMinutes().toString().padStart(2, '0');
+  }
 
-  const allRounds = [...fullHistory];
-  if (currentRaceName && Object.keys(currentBets).length > 0) {
-    const lastInHistory = fullHistory[fullHistory.length - 1];
-    const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
-    if (!alreadyIncluded) {
-      allRounds.push({ raceName: currentRaceName, bets: currentBets });
+  // =====================================================
+  // RENDER FUNCTIONS (UPDATED WITH TIMES)
+  // =====================================================
+
+  function renderSubmittedNames(names, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    for (const name of names) {
+      const tag = document.createElement('span');
+      tag.className = 'submitted-name-tag';
+      tag.innerHTML = `
+        <span class="tag-check">✓</span>
+        ${escHtml(name)}
+        <span class="submitted-time">${getCurrentTime()}</span>
+      `;
+      container.appendChild(tag);
     }
   }
 
-  if (allRounds.length === 0) {
-    text += 'No bets recorded yet.\n';
-  } else {
-    allRounds.forEach((round, i) => {
-      text += '--- ' + round.raceName + ' ---\n';
+  function renderHistory(history) {
+    const container = document.getElementById('historyContainer');
+    if (!history || history.length <= 1) {
+      container.classList.add('hidden');
+      return;
+    }
+    container.classList.remove('hidden');
+    let html = '<h3>📋 Previous Races</h3>';
+    for (let i = 0; i < history.length - 1; i++) {
+      const round = history[i];
+      const ejectedPlayers = round.ejectedPlayers || [];
+      html += '<div class="history-round">';
+      html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
       for (const [player, bet] of Object.entries(round.bets)) {
-        const total = calculateBetTotal(bet);
-        text += '\n' + player + ' (Total: $' + total + ', Time: ' + getCurrentTime() + '):\n';
-        text += bet + '\n';
-      }
-      text += '\n';
-    });
-  }
-
-  const blob = new Blob([text], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-  const blob = new Blob([text], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-    function renderCards(bets, ejectedPlayers = []) {
-      const container = document.getElementById('cardsContainer');
-      container.innerHTML = '';
-      for (const [player, bet] of Object.entries(bets)) {
         const isEjected = ejectedPlayers.includes(player);
         const total = calculateBetTotal(bet);
-        const card = document.createElement('div');
-        card.className = 'bet-card' + (isEjected ? ' ejected' : '');
-        card.innerHTML = `
-          <div class="player-name">${escHtml(player)}</div>
-          <div class="bet-content">${isEjected ? '(No bet submitted)' : escHtml(bet)}</div>
-          <div class="bet-total">Total: $${total}</div>
-        `;
-        container.appendChild(card);
-      }
-    }
-
-    function renderHistory(history) {
-      const container = document.getElementById('historyContainer');
-      if (!history || history.length <= 1) {
-        container.classList.add('hidden');
-        return;
-      }
-      container.classList.remove('hidden');
-      let html = '<h3>📋 Previous Races</h3>';
-      for (let i = 0; i < history.length - 1; i++) {
-        const round = history[i];
-        const ejectedPlayers = round.ejectedPlayers || [];
-        html += '<div class="history-round">';
-        html += '<div class="round-title">' + escHtml(round.raceName) + '</div>';
-        for (const [player, bet] of Object.entries(round.bets)) {
-          const isEjected = ejectedPlayers.includes(player);
-          const total = calculateBetTotal(bet);
-          html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
-          html += '<div class="h-name">' + escHtml(player) + '</div>';
-          html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(bet)) + '</div>';
-          html += '<div class="h-total">Total: $' + total + '</div>';
-          html += '</div>';
-        }
+        html += '<div class="history-bet' + (isEjected ? ' ejected' : '') + '">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: flex-start;">';
+        html += '<div class="h-name">' + escHtml(player) + '</div>';
+        html += '<div class="history-time">' + getCurrentTime() + '</div>';
+        html += '</div>';
+        html += '<div class="h-content">' + (isEjected ? '(No bet submitted)' : escHtml(bet)) + '</div>';
+        html += '<div class="h-total">Total: $' + total + '</div>';
         html += '</div>';
       }
-      container.innerHTML = html;
+      html += '</div>';
     }
+    container.innerHTML = html;
+  }
 
-    function renderSubmittedNames(names, containerId) {
-      const container = document.getElementById(containerId);
-      container.innerHTML = '';
-      for (const name of names) {
-        const tag = document.createElement('span');
-        tag.className = 'submitted-name-tag';
-        tag.innerHTML = `<span class="tag-check">✓</span>${escHtml(name)}`;
-        container.appendChild(tag);
+  function renderCards(bets, ejectedPlayers = []) {
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = '';
+    for (const [player, bet] of Object.entries(bets)) {
+      const isEjected = ejectedPlayers.includes(player);
+      const total = calculateBetTotal(bet);
+      const card = document.createElement('div');
+      card.className = 'bet-card' + (isEjected ? ' ejected' : '');
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div class="player-name">${escHtml(player)}</div>
+          <div class="submitted-time" style="margin-top: 0; font-size: 0.85rem;">${getCurrentTime()}</div>
+        </div>
+        <div class="bet-content">${isEjected ? '(No bet submitted)' : escHtml(bet)}</div>
+        <div class="bet-total">Total: $${total}</div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  // =====================================================
+  // ORIGINAL FUNCTIONS
+  // =====================================================
+
+  function show(id) {
+    ['setupScreen','nameScreen','betScreen','waitingScreen','revealScreen'].forEach(s => {
+      document.getElementById(s).classList.add('hidden');
+    });
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  function startDay() {
+    const num = document.getElementById('numPlayers').value;
+    socket.emit('setPlayers', num);
+  }
+
+  function submitRaceName() {
+    const name = document.getElementById('raceName').value.trim();
+    if (!name) return;
+    socket.emit('setRaceName', name);
+  }
+
+  function submitBet() {
+    const name = document.getElementById('playerName').value.trim();
+    const bet = document.getElementById('betInput').value.trim();
+    if (!name || !bet) return;
+    socket.emit('placeBet', { name, bet });
+    hasSubmitted = true;
+    document.getElementById('waitRaceTitle').textContent = document.getElementById('raceTitle').textContent;
+    show('waitingScreen');
+  }
+
+  function nextRound() {
+    hasSubmitted = false;
+    socket.emit('newRound');
+  }
+
+  // =====================================================
+  // EJECT FUNCTIONS
+  // =====================================================
+
+  function showEjectModal() {
+    document.getElementById('ejectModal').classList.remove('hidden');
+  }
+
+  function closeEjectModal() {
+    document.getElementById('ejectModal').classList.add('hidden');
+  }
+
+  function confirmEject() {
+    closeEjectModal();
+    socket.emit('ejectRace');
+  }
+
+  // =====================================================
+  // PASSWORD MODAL FUNCTIONS
+  // =====================================================
+
+  function showPasswordModal() {
+    document.getElementById('modalPassword').value = '';
+    document.getElementById('modalError').textContent = '';
+    document.getElementById('passwordModal').classList.remove('hidden');
+    document.getElementById('modalPassword').focus();
+  }
+
+  function closePasswordModal() {
+    document.getElementById('passwordModal').classList.add('hidden');
+  }
+
+  function confirmNewDay() {
+    const pw = document.getElementById('modalPassword').value;
+    if (!pw) {
+      document.getElementById('modalError').textContent = 'Please enter a password.';
+      return;
+    }
+    socket.emit('newRacingDay', pw);
+  }
+
+  document.getElementById('modalPassword').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmNewDay();
+  });
+
+  function downloadHistory() {
+    let text = '=== BETTING GAME HISTORY ===\n';
+    text += 'Downloaded: ' + new Date().toLocaleString() + '\n';
+    text += '================================\n\n';
+
+    const allRounds = [...fullHistory];
+    if (currentRaceName && Object.keys(currentBets).length > 0) {
+      const lastInHistory = fullHistory[fullHistory.length - 1];
+      const alreadyIncluded = lastInHistory && lastInHistory.raceName === currentRaceName;
+      if (!alreadyIncluded) {
+        allRounds.push({ raceName: currentRaceName, bets: currentBets });
       }
     }
 
-    function escHtml(str) {
-      const d = document.createElement('div');
-      d.textContent = str;
-      return d.innerHTML;
+    if (allRounds.length === 0) {
+      text += 'No bets recorded yet.\n';
+    } else {
+      allRounds.forEach((round, i) => {
+        text += '--- ' + round.raceName + ' ---\n';
+        for (const [player, bet] of Object.entries(round.bets)) {
+          const total = calculateBetTotal(bet);
+          text += '\n' + player + ' (Total: $' + total + ', Time: ' + getCurrentTime() + '):\n';
+          text += bet + '\n';
+        }
+        text += '\n';
+      });
     }
 
-    // Socket events
-    socket.on('state', (data) => {
-      currentRaceCounter = data.raceCounter || 1;
-      fullHistory = data.history || [];
-      submittedNames = data.submittedNames || [];
-      if (data.revealed && data.bets) {
-        currentRaceName = data.raceName;
-        currentBets = data.bets;
-        document.getElementById('revealRaceTitle').textContent = data.raceName;
-        renderCards(data.bets, data.ejectedPlayers || []);
-        renderHistory(data.history);
-        show('revealScreen');
-      } else if (data.gameStarted && data.raceName) {
-        currentRaceName = data.raceName;
-        document.getElementById('raceTitle').textContent = data.raceName;
-        document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
-        renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
-        show('betScreen');
-      } else if (data.gameStarted) {
-        document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
-        document.getElementById('raceName').value = 'R' + data.raceCounter;
-        show('nameScreen');
-      } else {
-        show('setupScreen');
-      }
-    });
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'betting-history-' + new Date().toISOString().slice(0,10) + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
-    socket.on('nameRound', (data) => {
-      hasSubmitted = false;
-      currentRaceCounter = data.raceCounter;
-      submittedNames = [];
-      document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
-      document.getElementById('raceName').value = 'R' + data.raceCounter;
-      show('nameScreen');
-    });
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
 
-    socket.on('roundStart', (data) => {
-      hasSubmitted = false;
-      currentRaceName = data.raceName;
-      submittedNames = [];
-      document.getElementById('raceTitle').textContent = data.raceName;
-      document.getElementById('betInput').value = '';
-      document.getElementById('betTotalDisplay').textContent = 'Total: $0';
-      document.getElementById('betErrorsContainer').innerHTML = '';
-      document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
-      renderSubmittedNames([], 'betSubmittedNamesList');
-      renderSubmittedNames([], 'submittedNamesList');
-      show('betScreen');
-    });
+  // =====================================================
+  // SOCKET EVENTS
+  // =====================================================
 
-    socket.on('betUpdate', (data) => {
-      submittedNames = data.submittedNames || [];
-      document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
-      document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
-      renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
-      renderSubmittedNames(submittedNames, 'submittedNamesList');
-    });
-
-    socket.on('reveal', (data) => {
+  socket.on('state', (data) => {
+    currentRaceCounter = data.raceCounter || 1;
+    fullHistory = data.history || [];
+    submittedNames = data.submittedNames || [];
+    if (data.revealed && data.bets) {
       currentRaceName = data.raceName;
       currentBets = data.bets;
-      fullHistory = data.history || [];
       document.getElementById('revealRaceTitle').textContent = data.raceName;
       renderCards(data.bets, data.ejectedPlayers || []);
       renderHistory(data.history);
       show('revealScreen');
-    });
-
-    socket.on('resetAll', () => {
-      hasSubmitted = false;
-      currentRaceCounter = 1;
-      fullHistory = [];
-      currentBets = {};
-      currentRaceName = '';
-      submittedNames = [];
-      document.getElementById('numPlayers').value = 3;
-      closePasswordModal();
+    } else if (data.gameStarted && data.raceName) {
+      currentRaceName = data.raceName;
+      document.getElementById('raceTitle').textContent = data.raceName;
+      document.getElementById('betStatus').textContent = data.betCount + ' / ' + data.target + ' bets placed';
+      renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
+      show('betScreen');
+    } else if (data.gameStarted) {
+      document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
+      document.getElementById('raceName').value = 'R' + data.raceCounter;
+      show('nameScreen');
+    } else {
       show('setupScreen');
-    });
+    }
+  });
 
-    socket.on('authError', (msg) => {
-      document.getElementById('modalError').textContent = msg;
-    });
-  </script>
+  socket.on('nameRound', (data) => {
+    hasSubmitted = false;
+    currentRaceCounter = data.raceCounter;
+    submittedNames = [];
+    document.getElementById('raceCounterLabel').textContent = 'Race #' + data.raceCounter;
+    document.getElementById('raceName').value = 'R' + data.raceCounter;
+    show('nameScreen');
+  });
+
+  socket.on('roundStart', (data) => {
+    hasSubmitted = false;
+    currentRaceName = data.raceName;
+    submittedNames = [];
+    document.getElementById('raceTitle').textContent = data.raceName;
+    document.getElementById('betInput').value = '';
+    document.getElementById('betTotalDisplay').textContent = 'Total: $0';
+    document.getElementById('betErrorsContainer').innerHTML = '';
+    document.getElementById('betStatus').textContent = '0 / ' + data.target + ' bets placed';
+    renderSubmittedNames([], 'betSubmittedNamesList');
+    renderSubmittedNames([], 'submittedNamesList');
+    show('betScreen');
+  });
+
+  socket.on('betUpdate', (data) => {
+    submittedNames = data.submittedNames || [];
+    document.getElementById('betStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
+    document.getElementById('waitStatus').textContent = data.count + ' / ' + data.target + ' bets placed';
+    renderSubmittedNames(submittedNames, 'betSubmittedNamesList');
+    renderSubmittedNames(submittedNames, 'submittedNamesList');
+  });
+
+  socket.on('reveal', (data) => {
+    currentRaceName = data.raceName;
+    currentBets = data.bets;
+    fullHistory = data.history || [];
+    document.getElementById('revealRaceTitle').textContent = data.raceName;
+    renderCards(data.bets, data.ejectedPlayers || []);
+    renderHistory(data.history);
+    show('revealScreen');
+  });
+
+  socket.on('resetAll', () => {
+    hasSubmitted = false;
+    currentRaceCounter = 1;
+    fullHistory = [];
+    currentBets = {};
+    currentRaceName = '';
+    submittedNames = [];
+    document.getElementById('numPlayers').value = 3;
+    closePasswordModal();
+    show('setupScreen');
+  });
+
+  socket.on('authError', (msg) => {
+    document.getElementById('modalError').textContent = msg;
+  });
+</script>
+  
 </body>
 </html>
