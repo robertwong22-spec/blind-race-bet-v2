@@ -581,6 +581,14 @@
 <!-- SCREEN: Place bet -->
 <div id="betScreen" class="container hidden">
   <h2 id="raceTitle">Race</h2>
+   <!-- 新增：在线人数显示 -->
+  <div style="margin-bottom: 15px; text-align: center; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+    <span style="font-size: 1.1rem;">
+      👥 <strong id="onlineCount">1</strong> people viewing
+    </span>
+  </div>
+  <label>Your name:</label>
+  <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
   <label for="playerName">Your name:</label>
   <input type="text" id="playerName" />
   <label for="betInput">Your bet:</label>
@@ -1191,7 +1199,10 @@
     renderSubmittedNames([], 'submittedNamesList');
     show('betScreen');
   });
-
+  // 在现有的socket事件监听中添加
+  socket.on('onlineCount', (count) => {
+  document.getElementById('onlineCount').textContent = count;
+});
   socket.on('betUpdate', (data) => {
     console.log('Bet update received:', data); // Debug log
     submittedNamesWithTimes = data.submittedNames || [];
