@@ -582,14 +582,6 @@
 <div id="betScreen" class="container hidden">
   <h2 id="raceTitle">Race</h2>
   
-  <!-- 新增：在线人数显示 -->
-  <div style="margin-bottom: 15px; text-align: center; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
-    <span style="font-size: 1.1rem;">
-      👥 <strong id="onlineCount">1</strong> people viewing
-    </span>
-  </div>
-  
-  <!-- 修复：删除重复的 label 和 input -->
   <label for="playerName">Your name:</label>
   <input type="text" id="playerName" placeholder="Enter your name" maxlength="20" />
   
@@ -617,44 +609,141 @@
   <p id="betStatus" class="status"></p>
   
   <div class="eject-section">
-    <p>Race started? Force reveal all bets now.</p>
-    <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+    <div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
+      <div>
+        <p>Race started? Force reveal all bets now.</p>
+        <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+      </div>
+      
+      <!-- 新增：在线人数小盒子 -->
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div id="viewerCountBox" style="
+          width: 60px;
+          height: 60px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #2c5364, #203a43);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.8rem;
+          font-weight: bold;
+          color: #ffd700;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        ">
+          <span id="onlineCount">1</span>
+        </div>
+        <div style="
+          margin-top: 6px;
+          font-size: 0.75rem;
+          color: #aaa;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        ">
+          Viewers
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
   <!-- SCREEN: Submitted waiting -->
-  <div id="waitingScreen" class="container hidden">
-    <h2 id="waitRaceTitle">Race</h2>
-    <div class="submitted-msg">
-      <span class="check">✅</span>
-      Bet submitted! Waiting for others<span class="waiting-dots"></span>
-    </div>
-    <p id="waitStatus" class="status"></p>
-    <div class="submitted-names-section">
-      <h4>✓ Submitted</h4>
-      <div id="submittedNamesList" class="submitted-names-list"></div>
-    </div>
-    <div class="eject-section">
-      <p>Race started? Force reveal all bets now.</p>
-      <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+  <!-- SCREEN: Submitted waiting -->
+<div id="waitingScreen" class="container hidden">
+  <h2 id="waitRaceTitle">Race</h2>
+  <div class="submitted-msg">
+    <span class="check">✅</span>
+    Bet submitted! Waiting for others<span class="waiting-dots"></span>
+  </div>
+  <p id="waitStatus" class="status"></p>
+  <div class="submitted-names-section">
+    <h4>✓ Submitted</h4>
+    <div id="submittedNamesList" class="submitted-names-list"></div>
+  </div>
+  <div class="eject-section">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 20px;">
+      <div>
+        <p>Race started? Force reveal all bets now.</p>
+        <button class="btn-eject" onclick="showEjectModal()">⏏ Eject</button>
+      </div>
+      
+      <!-- 新增：在线人数小盒子 -->
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div id="viewerCountBox" style="
+          width: 60px;
+          height: 60px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #2c5364, #203a43);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.8rem;
+          font-weight: bold;
+          color: #ffd700;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        ">
+          <span id="onlineCount2">1</span>
+        </div>
+        <div style="
+          margin-top: 6px;
+          font-size: 0.75rem;
+          color: #aaa;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        ">
+          Viewers
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
   <!-- SCREEN: Reveal -->
-  <div id="revealScreen" class="container hidden">
-    <h2 id="revealRaceTitle">Race Results</h2>
-    <div id="cardsContainer" class="cards-grid"></div>
-    <div class="reveal-buttons">
-      <div class="reveal-buttons-left">
-        <button class="btn-primary" onclick="nextRound()">Next Race</button>
-      </div>
-      <div class="reveal-buttons-right">
-        <button class="btn-download" onclick="downloadHistory()">📥 Download</button>
-        <button class="btn-newrace" onclick="showPasswordModal()">Newday</button>
-      </div>
+ <!-- SCREEN: Reveal -->
+<div id="revealScreen" class="container hidden">
+  <h2 id="revealRaceTitle">Race Results</h2>
+  <div id="cardsContainer" class="cards-grid"></div>
+  <div class="reveal-buttons">
+    <div class="reveal-buttons-left">
+      <button class="btn-primary" onclick="nextRound()">Next Race</button>
     </div>
-    <div id="historyContainer" class="history-section hidden"></div>
+    <div class="reveal-buttons-right">
+      <!-- 新增：在线人数小盒子 -->
+      <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;">
+        <div id="viewerCountBox" style="
+          width: 50px;
+          height: 50px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #2c5364, #203a43);
+          border: 2px solid rgba(255, 255, 255, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.5rem;
+          font-weight: bold;
+          color: #ffd700;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        ">
+          <span id="onlineCount3">1</span>
+        </div>
+        <div style="
+          margin-top: 4px;
+          font-size: 0.7rem;
+          color: #aaa;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+        ">
+          Viewers
+        </div>
+      </div>
+      
+      <button class="btn-download" onclick="downloadHistory()">📥 Download</button>
+      <button class="btn-newrace" onclick="showPasswordModal()">Newday</button>
+    </div>
   </div>
+  <div id="historyContainer" class="history-section hidden"></div>
+</div>
 
   <!-- PASSWORD MODAL -->
   <div id="passwordModal" class="modal-overlay hidden">
