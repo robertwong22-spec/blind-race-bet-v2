@@ -53,11 +53,135 @@ io.on('connection', (socket) => {
     ejectedPlayers: gameState.ejectedPlayers
   });
 
+  // 处理设置玩家数量
+  socket.on('setPlayers', (num) => {
+    gameState.target = parseInt(num) || 3;
+    gameState.gameStarted = true;
+    gameState.raceCounter = 1;
+    gameState.history = [];
+    gameState.ejectedPlayers = [];
+    io.emit('nameRound', { raceCounter: gameState.raceCounter });
+  });
+
+  // 处理设置比赛名称
+  socket.on('setRaceName', (name) => {
+    gameState.raceName = name;
+    gameState.bets = {};
+    gameState.revealed = false;
+    gameState.ejectedPlayers = [];
+    io.emit('roundStart', { raceName: name, target: gameState.target });
+  });
+
+  // 处理下注
+  socket.on('placeBet', ({ name, bet }) => {
+    if (gameState.revealed) return;
+    
+    // Store bet with timestamp
+    gameState.bets[name] = {
+      bet: bet,
+      time: new Date().toISOString()
+    };
+    
+    const count = Object.keys(gameState.bets).length;
+    const submittedNames = Object.keys(gameState.bets).map(playerName => ({
+      name: playerName,
+      time: gameState.bets[playerName].time
+    }));
+    
+    io.emit('betUpdate', { 
+      count: count, 
+      target: gameState.target, 
+      submittedNames: submittedNames 
+    });
+    
+    if (count >= gameState.target) {
+      gameState.revealed = true;
+      gameState.history.push({
+        raceName: gameState.raceName,
+        bets: { ...gameState.bets },
+        ejectedPlayers: []
+      });
+      io.emit('reveal', {
+        raceName: gameState.raceName,
+        bets: gameState.bets,
+        history: gameState.history,
+        ejectedPlayers: []
+      });
+    }
+  });
+
+  // 处理强制结束比赛
+  socket.on('ejectRace', () => {
+    if (gameState.revealed || !gameState.raceName) return;
+    
+    // Find players who haven't submitted
+    const submittedPlayers = Object.keys(gameState.bets);
+    const ejectedPlayers = [];
+    
+    // Create placeholder entries for non-submitted players
+    for (let i = submittedPlayers.length + 1; i <= gameState.target; i++) {
+      const ejectedName = `Player ${i} (not submitted)`;
+      gameState.bets[ejectedName] = {
+        bet: '(No bet submitted)',
+        time: new Date().toISOString() // Time when ejected
+      };
+      ejectedPlayers.push(ejectedName);
+    }
+    
+    gameState.revealed = true;
+    gameState.ejectedPlayers = ejectedPlayers;
+    
+    gameState.history.push({
+      raceName: gameState.raceName,
+      bets: { ...gameState.bets },
+      ejectedPlayers: ejectedPlayers
+    });
+    
+    io.emit('reveal', {
+      raceName: gameState.raceName,
+      bets: gameState.bets,
+      history: gameState.history,
+      ejectedPlayers: ejectedPlayers
+    });
+  });
+
+  // 处理下一轮
+  socket.on('newRound', () => {
+    gameState.raceCounter++;
+    gameState.raceName = '';
+    gameState.bets = {};
+    gameState.revealed = false;
+    gameState.ejectedPlayers = [];
+    io.emit('nameRound', { raceCounter: gameState.raceCounter });
+  });
+
+  // 处理新的一天（重置游戏）
+  socket.on('newRacingDay', (password) => {
+    if (password === ADMIN_PASSWORD) {
+      gameState = {
+        gameStarted: false,
+        target: 3,
+        raceCounter: 1,
+        raceName: '',
+        bets: {},
+        revealed: false,
+        history: [],
+        ejectedPlayers: []
+      };
+      io.emit('resetAll');
+    } else {
+      socket.emit('authError', 'Incorrect password');
+    }
+  });
+
   socket.on('disconnect', () => {
     // 新增：断开时减少人数
     onlineCount--;
     io.emit('onlineCount', onlineCount); // 广播给所有人
   });
+});
 
-  // ... 原有的其他事件处理代码保持不变 ...
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Online count tracking enabled`);
 });
