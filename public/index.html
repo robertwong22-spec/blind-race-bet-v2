@@ -581,18 +581,21 @@
 <!-- SCREEN: Place bet -->
 <div id="betScreen" class="container hidden">
   <h2 id="raceTitle">Race</h2>
-   <!-- 新增：在线人数显示 -->
+  
+  <!-- 新增：在线人数显示 -->
   <div style="margin-bottom: 15px; text-align: center; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
     <span style="font-size: 1.1rem;">
       👥 <strong id="onlineCount">1</strong> people viewing
     </span>
   </div>
-  <label>Your name:</label>
-  <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+  
+  <!-- 修复：删除重复的 label 和 input -->
   <label for="playerName">Your name:</label>
-  <input type="text" id="playerName" />
+  <input type="text" id="playerName" placeholder="Enter your name" maxlength="20" />
+  
   <label for="betInput">Your bet:</label>
-  <textarea id="betInput"></textarea>
+  <textarea id="betInput" placeholder="Enter your bet details..."></textarea>
+  
   <div id="betTotalDisplay" class="bet-total-display">Total: $0</div>
   <div id="betErrorsContainer" class="bet-errors"></div>
   
