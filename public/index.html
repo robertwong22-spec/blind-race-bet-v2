@@ -1292,8 +1292,12 @@
     show('betScreen');
   });
   // 在现有的socket事件监听中添加
-  socket.on('onlineCount', (count) => {
+// 修改在线人数更新处理
+socket.on('onlineCount', (count) => {
+  // 更新所有页面上的在线人数显示
   document.getElementById('onlineCount').textContent = count;
+  document.getElementById('onlineCount2').textContent = count;
+  document.getElementById('onlineCount3').textContent = count;
 });
   socket.on('betUpdate', (data) => {
     console.log('Bet update received:', data); // Debug log
