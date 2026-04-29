@@ -29,6 +29,25 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 // 新增：在线人数计数器
 let onlineCount = 0;
 
+// =====================================================
+// RACE NUMBER HELPER
+// =====================================================
+// Returns the next race number based on the previous race's name.
+// Extracts the LAST number found in the previous race's name and
+// adds 1. Falls back to history.length + 1 if no number can be parsed.
+// Returns 1 if there is no history at all.
+function getNextRaceNumber() {
+  if (!gameState.history || gameState.history.length === 0) return 1;
+  const lastRace = gameState.history[gameState.history.length - 1];
+  if (!lastRace || !lastRace.raceName) return gameState.history.length + 1;
+  const matches = lastRace.raceName.match(/(\d+)/g);
+  if (matches && matches.length > 0) {
+    const n = parseInt(matches[matches.length - 1], 10);
+    if (!isNaN(n)) return n + 1;
+  }
+  return gameState.history.length + 1;
+}
+
 io.on('connection', (socket) => {
   // 新增：连接时增加人数
   onlineCount++;
@@ -147,7 +166,8 @@ io.on('connection', (socket) => {
 
   // 处理下一轮
   socket.on('newRound', () => {
-    gameState.raceCounter++;
+    // === CHANGED: compute next race number from previous race's name ===
+    gameState.raceCounter = getNextRaceNumber();
     gameState.raceName = '';
     gameState.bets = {};
     gameState.revealed = false;
